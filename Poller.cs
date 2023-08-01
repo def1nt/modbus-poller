@@ -27,7 +27,7 @@ public sealed class Poller
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();
-                _repository.SaveData(machineData);
+                await _repository.SaveData(machineData);
                 await Task.Delay(7000);
             }
         }
@@ -38,6 +38,7 @@ public sealed class Poller
         }
         finally
         {
+            await Task.Delay(10000);
             if (_tcpClient.Connected) _tcpClient.Close();
         }
     }

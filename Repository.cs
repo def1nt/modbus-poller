@@ -4,7 +4,7 @@ using System.Text.Json;
 
 public interface IRepository
 {
-    public void SaveData(MachineData data);
+    public Task SaveData(MachineData data);
 }
 
 sealed public class FileRepository : IRepository
@@ -14,20 +14,15 @@ sealed public class FileRepository : IRepository
         File.WriteAllText("savedata.txt", string.Empty);
     }
 
-    public void SaveData(MachineData data)
-    {
-        Initialize();
-        using (var file = new StreamWriter("savedata.txt", true))
-        {
-            file.WriteLine(data.ToString());
-        }
-    }
-
-    private void Initialize()
+    public async Task SaveData(MachineData data)
     {
         if (!File.Exists("savedata.txt"))
         {
             File.Create("savedata.txt");
+        }
+        using (var file = new StreamWriter("savedata.txt", true))
+        {
+            await file.WriteLineAsync(data.ToString());
         }
     }
 }
@@ -40,7 +35,7 @@ public sealed class DatabaseRepository : IRepository
         _token = token;
     }
 
-    public async void SaveData(MachineData data)
+    public async Task SaveData(MachineData data)
     {
         var connString = "Host=192.168.105.12;Username=postgres;Password=sqladmin;Database=cloud_vmz";
         await using var conn = new NpgsqlConnection(connString);
@@ -77,7 +72,7 @@ public sealed class DatabaseRepository : IRepository
 
 public sealed class ConsoleRepository : IRepository
 {
-    public void SaveData(MachineData data)
+    public async Task SaveData(MachineData data)
     {
         Console.WriteLine(data.ToString());
     }
@@ -92,7 +87,7 @@ public sealed class OpenTSDBRepository : IRepository
         _token = token;
     }
 
-    public async void SaveData(MachineData data)
+    public async Task SaveData(MachineData data)
     {
         // Using http to connect to OpenTSDB instance
         var client = new HttpClient();
@@ -104,9 +99,6 @@ public sealed class OpenTSDBRepository : IRepository
             tags = new Dictionary<string, string>()
                 {
                     { "register", "" },
-                    // { "model", data.Model },
-                    // { "program", data.programName },
-                    // { "step", data.stepName }
                 }
         };
         foreach (var row in data.Data)

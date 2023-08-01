@@ -68,7 +68,7 @@ public sealed class TCPServer : ITCPListener // TODO: Rename
         }
         finally
         {
-            Thread.Sleep(10000); // If connection is still intact, wait for 10 seconds before letting client to reconnect
+            // Thread.Sleep(10000); // If connection is still intact, wait for 10 seconds before letting client to reconnect
             if (client.Connected) client.Close(); // Handled by Poller, but just in case
             Console.WriteLine($"Client {remoteEndPoint} disconnected");
         }
