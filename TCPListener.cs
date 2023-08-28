@@ -40,12 +40,12 @@ public sealed class TCPServer : ITCPListener // TODO: Rename
         {
             var client = await _listener.AcceptTcpClientAsync(token);
             if (client is null) continue;
-            Console.WriteLine($"Client connected from {client.Client.RemoteEndPoint}");
+            Console.WriteLine($"{DateTime.Now} - Client connected from {client.Client.RemoteEndPoint}");
 
             var task = HandleClientAsync(client, token); // This task is fire and forget, but dont forget
         }
         _listener.Stop();
-        Console.WriteLine("Listener stopped");
+        Console.WriteLine($"{DateTime.Now} - Listener stopped");
     }
 
     public void Stop(CancellationToken token = default)
@@ -71,7 +71,7 @@ public sealed class TCPServer : ITCPListener // TODO: Rename
         {
             // Thread.Sleep(10000); // If connection is still intact, wait for 10 seconds before letting client to reconnect
             if (client.Connected) client.Close(); // Handled by Poller, but just in case
-            Console.WriteLine($"Client {remoteEndPoint} disconnected");
+            Console.WriteLine($"{DateTime.Now} - Client {remoteEndPoint} disconnected");
         }
     }
 }
