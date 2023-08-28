@@ -34,7 +34,8 @@ public sealed class Poller
         catch (Exception e)
         {
             Console.WriteLine($"Poller.RunAsync() {e.GetType()} exception: {e.Message}");
-            Console.WriteLine($"Trace: {e.StackTrace}");
+            if (Environment.GetEnvironmentVariable("DEBUG") is not null)
+                Console.WriteLine($"Trace: {e.StackTrace}");
         }
         finally
         {
@@ -84,34 +85,34 @@ public sealed class Poller
             };
             machineData.Data.Add(registerData);
         }
-        Console.WriteLine(await GetCurrentProgramName());
-        Console.WriteLine(await GetCurrentStepName());
         machineData.programName = await GetCurrentProgramName();
         machineData.stepName = await GetCurrentStepName();
+        Console.WriteLine(machineData.programName);
+        Console.WriteLine(machineData.stepName);
         await GetCounters();
         return machineData;
     }
 
     private async Task<string> GetCurrentProgramName()
     {
-        RequestPacket request1 = new(Packet.PacketType.Request);
-        request1.SetData(1, 3, 0x1B58, 16);
-        var response1 = await SendReceiveAsync(request1);
-        if (response1.Data.Length == 16)
+        RequestPacket request = new(Packet.PacketType.Request);
+        request.SetData(1, 3, 0x1B58, 16);
+        var response = await SendReceiveAsync(request);
+        if (response.Data.Length == 16)
         {
-            return ToUTFString(response1.Data);
+            return ToUTFString(response.Data);
         }
         return string.Empty;
     }
 
     private async Task<string> GetCurrentStepName()
     {
-        RequestPacket request1 = new(Packet.PacketType.Request);
-        request1.SetData(1, 3, 0x1B6C, 8);
-        var response1 = await SendReceiveAsync(request1);
-        if (response1.Data.Length == 8)
+        RequestPacket request = new(Packet.PacketType.Request);
+        request.SetData(1, 3, 0x1B6C, 8);
+        var response = await SendReceiveAsync(request);
+        if (response.Data.Length == 8)
         {
-            return ToUTFString(response1.Data);
+            return ToUTFString(response.Data);
         }
         return string.Empty;
     }
@@ -141,16 +142,16 @@ public sealed class Poller
 
     private async Task GetCounters() // TODO: Temporary, remove later
     {
-        RequestPacket request1 = new(Packet.PacketType.Request);
-        request1.SetData(1, 3, 0x1B68, 1);
-        var response1 = await SendReceiveAsync(request1);
-        Console.WriteLine($"0x1B68: {response1.Data[0]}");
-        request1.SetData(1, 3, 0x1B69, 1);
-        response1 = await SendReceiveAsync(request1);
-        Console.WriteLine($"0x1B69: {response1.Data[0]}");
-        request1.SetData(1, 3, 0x04BC, 1);
-        response1 = await SendReceiveAsync(request1);
-        Console.WriteLine($"0x04BC: {response1.Data[0]}");
+        RequestPacket request = new(Packet.PacketType.Request);
+        request.SetData(1, 3, 0x1B68, 1);
+        var response = await SendReceiveAsync(request);
+        Console.WriteLine($"0x1B68: {response.Data[0]}");
+        request.SetData(1, 3, 0x1B69, 1);
+        response = await SendReceiveAsync(request);
+        Console.WriteLine($"0x1B69: {response.Data[0]}");
+        request.SetData(1, 3, 0x04BC, 1);
+        response = await SendReceiveAsync(request);
+        Console.WriteLine($"0x04BC: {response.Data[0]}");
     }
 
     private ushort StringToUShort(string address)

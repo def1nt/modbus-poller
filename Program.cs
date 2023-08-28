@@ -10,6 +10,7 @@ Console.CancelKeyPress += (sender, e) =>
 var tcpListener = new TCPServer();
 try
 {
+    Console.WriteLine("Starting listener...");
     tcpListener.Start(token);
 }
 catch (TaskCanceledException)
@@ -19,8 +20,11 @@ catch (TaskCanceledException)
 catch (Exception e)
 {
     Console.WriteLine($"tcpListener.Start() exception: {e.Message}");
+    if (Environment.GetEnvironmentVariable("DEBUG") is not null)
+        Console.WriteLine($"Trace: {e.StackTrace}");
 }
 finally
 {
+    Console.WriteLine("Closing listener...");
     tcpListener.Stop();
 }
