@@ -59,5 +59,3 @@ public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
     }
 
 }
-
-

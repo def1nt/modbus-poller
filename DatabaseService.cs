@@ -3,7 +3,6 @@ using Npgsql;
 public interface IDatabaseService
 {
     public DatabaseService GetInstance(string connectionString);
-    
 }
 
 public class DatabaseService : IDatabaseService

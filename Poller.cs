@@ -1,5 +1,4 @@
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 
 public sealed class Poller
 {
@@ -145,13 +144,21 @@ public sealed class Poller
         RequestPacket request = new(Packet.PacketType.Request);
         request.SetData(1, 3, 0x1B68, 1);
         var response = await SendReceiveAsync(request);
-        Console.WriteLine($"0x1B68: {response.Data[0]}");
+        Console.WriteLine($"0x1B68: {response.Data[0]} номер программы");
         request.SetData(1, 3, 0x1B69, 1);
         response = await SendReceiveAsync(request);
-        Console.WriteLine($"0x1B69: {response.Data[0]}");
+        Console.WriteLine($"0x1B69: {response.Data[0]} запусков");
         request.SetData(1, 3, 0x04BC, 1);
         response = await SendReceiveAsync(request);
-        Console.WriteLine($"0x04BC: {response.Data[0]}");
+        Console.WriteLine($"0x04BC: {response.Data[0]} шаг");
+
+        request.SetData(1, 3, 0x141C, 1);
+        response = await SendReceiveAsync(request);
+        Console.WriteLine($"0x141C: {response.Data[0]} секунд");
+
+        request.SetData(1, 3, 0x141E, 1);
+        response = await SendReceiveAsync(request);
+        Console.WriteLine($"0x141E: {response.Data[0]} часов");
     }
 
     private ushort StringToUShort(string address)
