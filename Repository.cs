@@ -114,6 +114,42 @@ public sealed class OpenTSDBRepository : IRepository
                 Console.WriteLine($"Error sending data: {row.Name} {row.Value} {row.Timestamp}");
             }
         }
+
+        var connString = "Host=192.168.105.12;Username=postgres;Password=sqladmin;Database=cloud_vmz";
+        await using var conn = new NpgsqlConnection(connString);
+        try
+        {
+            long deviceID = long.Parse(data.DeviceID);
+            await conn.OpenAsync(_token);
+            await using (var cmd = new NpgsqlCommand("""
+                DELETE FROM device_cp WHERE unique_id = @DeviceID
+                """, conn))
+            {
+                cmd.Parameters.AddWithValue("DeviceID", deviceID);
+                await cmd.ExecuteNonQueryAsync(_token);
+            }
+
+            await using (var cmd = new NpgsqlCommand("""
+                INSERT INTO device_cp (unique_id, program_name, step_name, added_at) VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp)
+                """, conn))
+            {
+                cmd.Parameters.AddWithValue("DeviceID", deviceID);
+                cmd.Parameters.AddWithValue("ProgramName", data.programName);
+                cmd.Parameters.AddWithValue("StepName", data.stepName);
+                cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
+                await cmd.ExecuteNonQueryAsync(_token);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error saving data to database: " + e.Message);
+            if (Environment.GetEnvironmentVariable("DEBUG") is not null)
+                Console.WriteLine($"Trace: {e.StackTrace}");
+        }
+        finally
+        {
+            await conn.CloseAsync();
+        }
     }
 
     struct Data
