@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Sockets;
 
 public sealed class Poller
@@ -80,7 +81,7 @@ public sealed class Poller
             {
                 Timestamp = DateTime.Now,
                 Name = parameter.Name,
-                Value = response.Data[0].ToString(), // TODO: Possible null reference
+                Value = (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")), // TODO: Possible null reference
             };
             machineData.Data.Add(registerData);
         }

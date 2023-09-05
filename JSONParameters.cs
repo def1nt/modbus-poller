@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 
 public interface IRegisterInfoProvider
@@ -34,6 +35,7 @@ public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
             }
 
             parameter.Address = item.GetProperty("address").GetString() ?? string.Empty;
+            parameter.Multiplier = double.TryParse(item.GetProperty("multiplier").GetString(), CultureInfo.GetCultureInfo("en-US"), out double multiplier) ? multiplier : 1.0;
             var name_variants = item.GetProperty("name").EnumerateObject();
             parameter.Name = string.Empty;
             foreach (var name_variant in name_variants)

@@ -3,15 +3,17 @@ public struct RegisterInfo
     public string Address;
     public string Name;
     public uint PollInterval;
+    public double Multiplier;
 
     public RegisterInfo()
     {
         Address = "";
         Name = "";
         PollInterval = 0;
+        Multiplier = 1.0;
     }
 
-    public readonly override string ToString() => $"Address: {Address}\nName: {Name}\nPoll interval: {PollInterval}\n";
+    public readonly override string ToString() => $"Address: {Address}\nName: {Name}\nPoll interval: {PollInterval}\nMultiplier: {Multiplier}\n";
 }
 
 public struct RegisterData
