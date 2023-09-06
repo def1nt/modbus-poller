@@ -74,7 +74,7 @@ public sealed class ConsoleRepository : IRepository
 {
     public async Task SaveData(MachineData data)
     {
-        Console.WriteLine(data.ToString());
+        await Task.Run(() => Console.WriteLine(data.ToString()));
     }
 }
 
@@ -138,6 +138,21 @@ public sealed class OpenTSDBRepository : IRepository
                 cmd.Parameters.AddWithValue("StepName", data.stepName);
                 cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
                 await cmd.ExecuteNonQueryAsync(_token);
+            }
+
+            int.TryParse(data.Data.Where(x => x.Name == "Ошибки").FirstOrDefault().Value, out int errorCode);
+            if (errorCode != 0)
+            {
+                await using (var cmd = new NpgsqlCommand("""
+                INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at) VALUES (@DeviceID, @Error, @Cycle, @Timestamp)
+                """, conn))
+                {
+                    cmd.Parameters.AddWithValue("DeviceID", deviceID);
+                    cmd.Parameters.AddWithValue("Error", errorCode);
+                    cmd.Parameters.AddWithValue("Cycle", int.Parse(data.Data.Where(x => x.Name == "Цикл стирки").FirstOrDefault().Value));
+                    cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
+                    await cmd.ExecuteNonQueryAsync(_token);
+                }
             }
         }
         catch (Exception e)
