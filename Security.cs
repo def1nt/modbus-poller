@@ -1,4 +1,5 @@
 // TODO: Everything in this file will change
+// TODO: Make this into a separate namespace
 
 using Npgsql;
 
@@ -10,8 +11,8 @@ public sealed class Security
         {
             throw new Exception("Invalid device ID");
         }
-        
-        return new DeviceInfo("777777777777", "VMZ-1", "192.168.105.199", "00:00:00:00:00:00", "Active", "VMZ-1");
+
+        return new DeviceInfo("777777777777", "VMZ-1", "Active", "VMZ-1");
     }
 
     private void GetMachineData(string deviceID) // This gets the data from the machine with provided ID
@@ -21,6 +22,23 @@ public sealed class Security
         // TODO
     }
 
+    public DeviceInfo? AuthenticateDevice(ushort series, ushort id, ushort secret)
+    {
+        foreach (var device in GetDeviceList())
+        {
+            if (device.Item1 == series && device.Item2 == id && device.Item3 == secret)
+            {
+                return new("777777777777", "VMZ-1", "Active", "VMZ-1"); // TODO: Return device itself
+            }
+        }
+        return null;
+    }
+
+    public IEnumerable<(ushort, ushort, ushort)> GetDeviceList()
+    {
+        yield return (1, 1, 124); // Stub
+    }
+
 }
-public record DeviceInfo(string DeviceID, string DeviceName, string DeviceIP, string DeviceMAC, string DeviceStatus, string DeviceType);
+public record DeviceInfo(string DeviceID, string DeviceName, string DeviceStatus, string DeviceType);
 

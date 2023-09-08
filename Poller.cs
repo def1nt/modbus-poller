@@ -5,25 +5,25 @@ public sealed class Poller
 {
     private readonly CancellationToken token = default;
     private readonly IRepository _repository;
+    private readonly Security _security;
     private readonly TcpClient _tcpClient;
     private readonly NetworkStream _stream;
-    private byte[] _remoteID;
-    private string RemoteID { get => _remoteID.Select(x => x.ToString("X2")).Aggregate((x, y) => x + y); }
+    private DeviceInfo? _deviceInfo;
 
     public Poller(TcpClient tcpClient, CancellationToken token = default)
     {
         this.token = token;
         _repository = RepositoryFactory.GetRepository("opentsdb");
+        _security = new();
         _tcpClient = tcpClient;
         _stream = _tcpClient.GetStream();
-        _remoteID = Array.Empty<byte>();
     }
 
     public async Task RunAsync()
     {
         try
         {
-            _remoteID = await GetRemoteID();
+            await GetRemoteID(); // TODO: This, also, does authentication, so it should be called AuthenticateDevice()
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();
@@ -60,18 +60,24 @@ public sealed class Poller
         return response;
     }
 
-    private async Task<byte[]> GetRemoteID()
+    private async Task GetRemoteID()
     {
         RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, 0, 1);
+        request.SetData(1, 3, 0x1400, 3); // TODO: Register address may change!
         var response = await SendReceiveAsync(request);
-        return response.SenderID;
+        var series = response.Data[0];
+        var id = response.Data[1];
+        var secret = response.Data[2];
+        if ((_deviceInfo = _security.AuthenticateDevice(series, id, secret)) is null)
+        {
+            throw new System.Security.SecurityException("Device authentication failed");
+        }
     }
 
     private async Task<MachineData> Poll()
     {
-        MachineData machineData = new(RemoteID);
-        MachineParameters machineParameters = new(RemoteID);
+        MachineData machineData = new(_deviceInfo!.DeviceID); // stub, use real ID later
+        MachineParameters machineParameters = new(_deviceInfo!.DeviceID); // stub, use real ID later
         foreach (var parameter in machineParameters.Parameters)
         {
             RequestPacket request = new(Packet.PacketType.Request);
