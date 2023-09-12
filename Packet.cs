@@ -90,31 +90,20 @@ public sealed class RequestPacket : Packet
 public sealed class ResponsePacket : Packet
 {
     public uint Length { get => (uint)_data.Length; }
-    public byte[] SenderID
-    {
-        get
-        {
-            if (Length < 6)
-                throw new ArgumentException("Invalid packet length");
-            byte[] bytes = new byte[6];
-            Array.Copy(_data, 0, bytes, 0, 6);
-            return bytes;
-        }
-    }
     public byte UnitID
     {
         get
         {
-            return _data[6];
+            return _data[0];
         }
     }
     public byte FunctionCode // TODO: use enums
     {
         get
         {
-            if (Length < 9)
+            if (Length < 3)
                 throw new ArgumentException("Invalid packet length");
-            return _data[7];
+            return _data[1];
         }
     }
 
@@ -123,7 +112,7 @@ public sealed class ResponsePacket : Packet
         get
         {
             if (FunctionCode >= 0x81)
-                return _data[8];
+                return _data[2];
             else return 0;
         }
     }
@@ -133,7 +122,7 @@ public sealed class ResponsePacket : Packet
         get
         {
             if (ExceptionCode == 0)
-                return _data[8];
+                return _data[2];
             else return 0;
         }
     }
@@ -142,13 +131,13 @@ public sealed class ResponsePacket : Packet
     {
         get
         {
-            if (Length < 10 || ByteCount == 0) return Array.Empty<ushort>();
+            if (Length < 4 || ByteCount == 0) return Array.Empty<ushort>();
 
             ushort[] data = new ushort[ByteCount / 2]; // TODO: check if this line is correct, sometimes throws exception
             byte[] bytes = new byte[2];
             for (int i = 0; i < data.Length; i++)
             {
-                Array.Copy(_data, 9 + i * 2, bytes, 0, 2);
+                Array.Copy(_data, 3 + i * 2, bytes, 0, 2);
                 Array.Reverse(bytes); // Properly handling endianness
                 data[i] = BitConverter.ToUInt16(bytes);
             }
@@ -158,11 +147,7 @@ public sealed class ResponsePacket : Packet
 
     public ResponsePacket(PacketType kind) : base(kind)
     {
-        if (kind == PacketType.Response)
-        {
-            // _data = new byte[5];
-        }
-        else
+        if (kind != PacketType.Response)
         {
             throw new ArgumentException("Invalid packet type");
         }
@@ -180,9 +165,9 @@ public sealed class ResponsePacket : Packet
 
     private bool CheckCRC()
     {
-        // Cheching CRC ignoring first 6 bytes (SenderID) and last 2 bytes (CRC)
-        byte[] data = new byte[_data.Length - 8];
-        Array.Copy(_data, 6, data, 0, data.Length);
+        // Cheching CRC ignoring last 2 bytes (CRC)
+        byte[] data = new byte[_data.Length - 2];
+        Array.Copy(_data, 0, data, 0, data.Length);
         ushort crc = CalculateCRC16(data);
         byte[] bytes = BitConverter.GetBytes(crc);
         return bytes[0] == _data[^2] && bytes[1] == _data[^1];
