@@ -46,11 +46,10 @@ public sealed class Poller
 
     private async Task<ResponsePacket> SendReceiveAsync(RequestPacket request) // TODO: What if there is no response?
     {
-        int bytesRead;
         byte[] buffer = new byte[256];
 
         await _stream.WriteAsync(request.Data).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
-        bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), token).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
+        int bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), token).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
 
         var response = new ResponsePacket(Packet.PacketType.Response);
         if (bytesRead != 0)
@@ -78,9 +77,9 @@ public sealed class Poller
     {
         MachineData machineData = new(_deviceInfo!.DeviceID); // stub, use real ID later
         MachineParameters machineParameters = new(_deviceInfo!.DeviceID); // stub, use real ID later
+        RequestPacket request = new(Packet.PacketType.Request);
         foreach (var parameter in machineParameters.Parameters)
         {
-            RequestPacket request = new(Packet.PacketType.Request);
             request.SetData(1, 3, StringToUShort(parameter.Address), 1);
             var response = await SendReceiveAsync(request);
             RegisterData registerData = new()
@@ -127,7 +126,8 @@ public sealed class Poller
     {
         byte[] bytes = new byte[32];
         string programNameString = string.Empty;
-        for (int i = 0; i < ushorts.Length; i++) // Parsing over 16 ushorts splitting them into 2 bytes and converting them from ISO 8859-5 to utf-16 by adding 0xFEFF_0360
+        int length = Math.Min(ushorts.Length, 16);
+        for (int i = 0; i < length; i++) // Parsing over 16 ushorts splitting them into 2 bytes and converting them from ISO 8859-5 to utf-16 by adding 0xFEFF_0360
         {
             byte[] bytes_t = BitConverter.GetBytes(ushorts[i]);
             bytes[i * 2] = bytes_t[0];
@@ -148,28 +148,31 @@ public sealed class Poller
 
     private async Task GetCounters() // TODO: Temporary, remove later
     {
+        Console.WriteLine();
+
+        await DebugLog(0x1B68, 1, "номер программы");
+        await DebugLog(0x1B69, 1, "запусков");
+        await DebugLog(0x04BC, 1, "шаг");
+
+        await DebugLog(0x141C, 1, "секунд");
+        await DebugLog(0x141E, 1, "часов");
+
+        Console.WriteLine();
+    }
+
+    private async Task DebugLog(ushort address, ushort count, params string[] name)
+    {
         RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, 0x1B68, 1);
+        request.SetData(1, 3, address, count);
         var response = await SendReceiveAsync(request);
-        Console.WriteLine($"0x1B68: {response.Data[0]} номер программы");
-        request.SetData(1, 3, 0x1B69, 1);
-        response = await SendReceiveAsync(request);
-        Console.WriteLine($"0x1B69: {response.Data[0]} запусков");
-        request.SetData(1, 3, 0x04BC, 1);
-        response = await SendReceiveAsync(request);
-        Console.WriteLine($"0x04BC: {response.Data[0]} шаг");
-
-        request.SetData(1, 3, 0x141C, 1);
-        response = await SendReceiveAsync(request);
-        Console.WriteLine($"0x141C: {response.Data[0]} секунд");
-
-        request.SetData(1, 3, 0x141E, 1);
-        response = await SendReceiveAsync(request);
-        Console.WriteLine($"0x141E: {response.Data[0]} часов");
+        for (int i = 0; i < count; i++)
+        {
+            Console.WriteLine($"{address + i:X2}: {response.Data[i]} {name.ElementAtOrDefault(i) ?? string.Empty}");
+        }
     }
 
     private ushort StringToUShort(string address)
     {
-        return ushort.Parse(address, System.Globalization.NumberStyles.HexNumber);
+        return ushort.Parse(address, NumberStyles.HexNumber);
     }
 }

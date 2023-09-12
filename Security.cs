@@ -37,8 +37,8 @@ public sealed class Security
     public IEnumerable<(ushort, ushort, ushort)> GetDeviceList()
     {
         yield return (1, 1, 124); // Stub
+        yield return (1, 2, 125); // Stub
     }
 
 }
 public record DeviceInfo(string DeviceID, string DeviceName, string DeviceStatus, string DeviceType);
-
