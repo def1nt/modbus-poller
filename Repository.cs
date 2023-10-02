@@ -154,6 +154,27 @@ public sealed class OpenTSDBRepository : IRepository
                     await cmd.ExecuteNonQueryAsync(_token);
                 }
             }
+
+            int.TryParse(data.Data.Where(x => x.Name == "Цикл стирки").FirstOrDefault().Value, out int wash_cycle);
+            int.TryParse(data.Data.Where(x => x.Name == "Наработка часы").FirstOrDefault().Value, out int all_operating_time);
+            int.TryParse(data.Data.Where(x => x.Name == "Расход воды всего").FirstOrDefault().Value, out int all_water_consumption);
+            double.TryParse(data.Data.Where(x => x.Name == "Взвешенное бельё").FirstOrDefault().Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
+            int.TryParse(data.Data.Where(x => x.Name == "Время работы программы минуты").FirstOrDefault().Value, out int cur_program_time);
+            await using (var cmd = new NpgsqlCommand("""
+                INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at)
+                VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp)
+                """, conn))
+            {
+                cmd.Parameters.AddWithValue("DeviceID", deviceID);
+                cmd.Parameters.AddWithValue("WashCycle", wash_cycle);
+                cmd.Parameters.AddWithValue("AllOperatingTime", all_operating_time);
+                cmd.Parameters.AddWithValue("AllWaterConsumption", all_water_consumption);
+                cmd.Parameters.AddWithValue("ProgramName", data.programName);
+                cmd.Parameters.AddWithValue("CurWeight", (int)(cur_weight * 10));
+                cmd.Parameters.AddWithValue("CurProgramTime", cur_program_time);
+                cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
+                await cmd.ExecuteNonQueryAsync(_token);
+            }
         }
         catch (Exception e)
         {
