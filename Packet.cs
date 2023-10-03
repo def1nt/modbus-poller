@@ -67,7 +67,7 @@ public sealed class RequestPacket : Packet
     public void SetData(byte UnitID, byte FunctionCode, ushort FirstAdress, ushort NumberOfPoints)
     {
         _data[0] = UnitID;
-        if (FunctionCode != 3) throw new ArgumentException("Function code must always be 3");
+        if (FunctionCode != 3 && FunctionCode != 1) throw new ArgumentException("Function code must always be 1 or 3");
         _data[1] = FunctionCode;
         byte[] bytes = BitConverter.GetBytes(FirstAdress);
         Array.Reverse(bytes);
@@ -133,15 +133,28 @@ public sealed class ResponsePacket : Packet
         {
             if (Length < 4 || ByteCount == 0) return Array.Empty<ushort>();
 
-            ushort[] data = new ushort[ByteCount / 2]; // TODO: check if this line is correct, sometimes throws exception
-            byte[] bytes = new byte[2];
-            for (int i = 0; i < data.Length; i++)
+            if (FunctionCode == 3)
             {
-                Array.Copy(_data, 3 + i * 2, bytes, 0, 2);
-                Array.Reverse(bytes); // Properly handling endianness
-                data[i] = BitConverter.ToUInt16(bytes);
+                ushort[] data = new ushort[ByteCount / 2]; // TODO: check if this line is correct, sometimes throws exception
+                byte[] bytes = new byte[2];
+                for (int i = 0; i < data.Length; i++)
+                {
+                    Array.Copy(_data, 3 + i * 2, bytes, 0, 2);
+                    Array.Reverse(bytes); // Properly handling endianness
+                    data[i] = BitConverter.ToUInt16(bytes);
+                }
+                return data;
             }
-            return data;
+            else if (FunctionCode == 1)
+            {
+                ushort[] data = new ushort[ByteCount];
+                for (int i = 0; i < data.Length; i++)
+                {
+                    data[i] = _data[3 + i];
+                }
+                return data;
+            }
+            return Array.Empty<ushort>();
         }
     }
 
