@@ -28,7 +28,7 @@ public sealed class Poller
             {
                 var machineData = await Poll();
                 await _repository.SaveData(machineData);
-                await Task.Delay(7000);
+                await Task.Delay(5000);
             }
         }
         catch (Exception e)
@@ -80,7 +80,7 @@ public sealed class Poller
         RequestPacket request = new(Packet.PacketType.Request);
         foreach (var parameter in machineParameters.Parameters)
         {
-            request.SetData(1, 3, StringToUShort(parameter.Address), 1);
+            request.SetData(1, parameter.Function, StringToUShort(parameter.Address), 1);
             var response = await SendReceiveAsync(request);
             RegisterData registerData = new()
             {
@@ -148,6 +148,7 @@ public sealed class Poller
 
     private async Task GetCounters() // TODO: Temporary, remove later
     {
+        Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         Console.WriteLine();
 
         await DebugLog(0x1B68, 1, "номер программы");
@@ -160,10 +161,11 @@ public sealed class Poller
         Console.WriteLine();
     }
 
-    private async Task DebugLog(ushort address, ushort count, params string[] name)
+    private async Task DebugLog(ushort address, ushort count, params string[] name) => await DebugLog(address, 3, count, name);
+    private async Task DebugLog(ushort address, byte function, ushort count, params string[] name)
     {
         RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, address, count);
+        request.SetData(1, function, address, count);
         var response = await SendReceiveAsync(request);
         for (int i = 0; i < count; i++)
         {

@@ -9,7 +9,6 @@ public interface IRegisterInfoProvider
 public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
 {
     public JsonDocument jsonDocument;
-    string[] skipList = { "c_2688208", "c_2688214", "c_2688220", "c_2688226", "c_2688232", "c_2688238", "c_2688256" };
 
     public JSONRegisterInfoProvider(string modelId)
     {
@@ -27,8 +26,8 @@ public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
         var array = root.GetProperty("parameters").EnumerateArray();
         foreach (var item in array)
         {
-            var category = item.GetProperty("category").GetString() ?? string.Empty;
-            if (skipList.Contains(category))
+            var poll = item.GetProperty("poll").GetBoolean();
+            if (!poll)
             {
                 continue;
             }
@@ -36,6 +35,7 @@ public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
             var parameter = new RegisterInfo
             {
                 Address = GetValueOrNull(item, "address", typeof(string)) as string ?? string.Empty,
+                Function = GetValueOrNull(item, "read_function", typeof(byte)) as byte? ?? 0,
                 PollInterval = GetValueOrNull(item, "interval", typeof(uint)) as uint? ?? 0,
                 Multiplier = GetValueOrNull(item, "multiplier", typeof(double)) as double? ?? 1.0,
                 Name = GetValueOrNull(item, "name", typeof(string)) as string ?? string.Empty
@@ -54,6 +54,7 @@ public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
                 Type t when t == typeof(string) => element.GetString(),
                 Type t when t == typeof(int) => element.TryGetInt32(out int value) ? value : (int?)null,
                 Type t when t == typeof(uint) => element.TryGetUInt32(out uint value) ? value : (uint?)null,
+                Type t when t == typeof(byte) => element.TryGetByte(out byte value) ? value : (byte?)null,
                 Type t when t == typeof(double) => element.TryGetDouble(out double value) ? value : (double?)null,
                 Type t when t == typeof(bool) => element.GetBoolean(),
                 _ => throw new ArgumentException($"Type {type} not supported"),

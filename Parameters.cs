@@ -1,6 +1,7 @@
 public struct RegisterInfo
 {
     public string Address;
+    public byte Function;
     public string Name;
     public uint PollInterval;
     public double Multiplier;
@@ -8,12 +9,13 @@ public struct RegisterInfo
     public RegisterInfo()
     {
         Address = "";
+        Function = 3;
         Name = "";
         PollInterval = 0;
         Multiplier = 1.0;
     }
 
-    public readonly override string ToString() => $"Address: {Address}\nName: {Name}\nPoll interval: {PollInterval}\nMultiplier: {Multiplier}\n";
+    public readonly override string ToString() => $"Address: {Address}\nFunction: {Function}\nName: {Name}\nPoll interval: {PollInterval}\nMultiplier: {Multiplier}\n";
 }
 
 public struct RegisterData
