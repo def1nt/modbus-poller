@@ -121,6 +121,25 @@ public sealed class OpenTSDBRepository : IRepository
         {
             long deviceID = long.Parse(data.DeviceID);
             await conn.OpenAsync(_token);
+
+            int.TryParse(data.Data.Where(x => x.Name == "Ошибки").FirstOrDefault().Value, out int errorCode);
+            if (errorCode != 0)
+            {
+                await using (var cmd = new NpgsqlCommand("""
+                INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at) VALUES (@DeviceID, @Error, @Cycle, @Timestamp)
+                """, conn))
+                {
+                    cmd.Parameters.AddWithValue("DeviceID", deviceID);
+                    cmd.Parameters.AddWithValue("Error", errorCode);
+                    cmd.Parameters.AddWithValue("Cycle", int.Parse(data.Data.Where(x => x.Name == "Цикл стирки").FirstOrDefault().Value));
+                    cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
+                    await cmd.ExecuteNonQueryAsync(_token);
+                }
+            }
+
+            int.TryParse(data.Data.Where(x => x.Name == "Статус: Автоматич_упр").FirstOrDefault().Value, out int autoControl);
+            if (autoControl != 1) return;
+
             await using (var cmd = new NpgsqlCommand("""
                 DELETE FROM device_cp WHERE unique_id = @DeviceID
                 """, conn))
@@ -138,21 +157,6 @@ public sealed class OpenTSDBRepository : IRepository
                 cmd.Parameters.AddWithValue("StepName", data.stepName);
                 cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
                 await cmd.ExecuteNonQueryAsync(_token);
-            }
-
-            int.TryParse(data.Data.Where(x => x.Name == "Ошибки").FirstOrDefault().Value, out int errorCode);
-            if (errorCode != 0)
-            {
-                await using (var cmd = new NpgsqlCommand("""
-                INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at) VALUES (@DeviceID, @Error, @Cycle, @Timestamp)
-                """, conn))
-                {
-                    cmd.Parameters.AddWithValue("DeviceID", deviceID);
-                    cmd.Parameters.AddWithValue("Error", errorCode);
-                    cmd.Parameters.AddWithValue("Cycle", int.Parse(data.Data.Where(x => x.Name == "Цикл стирки").FirstOrDefault().Value));
-                    cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
-                    await cmd.ExecuteNonQueryAsync(_token);
-                }
             }
 
             int.TryParse(data.Data.Where(x => x.Name == "Цикл стирки").FirstOrDefault().Value, out int wash_cycle);
