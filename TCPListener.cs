@@ -20,7 +20,7 @@ public sealed class TCPServer : ITCPListener // TODO: Rename
 
     public TCPServer()
     {
-        var localEndpoint = new IPEndPoint(IPAddress.Any, 8899);
+        var localEndpoint = new IPEndPoint(AppSettings.ListenOn, 8899);
         _listener = new TcpListener(localEndpoint);
     }
 

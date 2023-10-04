@@ -37,8 +37,7 @@ public sealed class DatabaseRepository : IRepository
 
     public async Task SaveData(MachineData data)
     {
-        var connString = "Host=192.168.105.12;Username=postgres;Password=sqladmin;Database=cloud_vmz";
-        await using var conn = new NpgsqlConnection(connString);
+        await using var conn = new NpgsqlConnection(AppSettings.PostgresConnectionString);
 
         try
         {
@@ -91,7 +90,7 @@ public sealed class OpenTSDBRepository : IRepository
     {
         // Using http to connect to OpenTSDB instance
         var client = new HttpClient();
-        client.BaseAddress = new Uri("http://192.168.105.12:4242/api/put");
+        client.BaseAddress = new Uri(AppSettings.VictoriaMetricsURL);
         _data = new()
         {
             metric = "device" + data.DeviceID,
@@ -115,8 +114,7 @@ public sealed class OpenTSDBRepository : IRepository
             }
         }
 
-        var connString = "Host=192.168.105.12;Username=postgres;Password=sqladmin;Database=cloud_vmz";
-        await using var conn = new NpgsqlConnection(connString);
+        await using var conn = new NpgsqlConnection(AppSettings.PostgresConnectionString);
         try
         {
             long deviceID = long.Parse(data.DeviceID);
