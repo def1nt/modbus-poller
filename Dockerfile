@@ -10,5 +10,5 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:7.0
 EXPOSE 8899
 WORKDIR /app
 COPY *.json .
-COPY --from=build-env ./bin/Release/net7.0/linux-x64/ .
+COPY --from=build-env /app/bin/Release/net7.0/linux-x64/ .
 ENTRYPOINT ["./usr-device-test"]
