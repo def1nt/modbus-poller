@@ -1,0 +1,103 @@
+{
+    "parameters": [
+        {
+            "code": "D555",
+            "read_function": 3,
+            "write_function": null,
+            "address": "22B",
+            "device_format": "uint16",
+            "multiplier": 0.1000000,
+            "name": "Вес белья",
+            "codename": "weight",
+            "poll": true
+        },
+        {
+            "code": "666",
+            "read_function": 3,
+            "write_function": null,
+            "address": "29A",
+            "device_format": "uint16",
+            "multiplier": 1.0000000,
+            "name": "Текущая скорость",
+            "codename": "current_speed",
+            "poll": true
+        },
+        {
+            "code": "D777",
+            "read_function": 3,
+            "write_function": null,
+            "address": "309",
+            "device_format": "uint16",
+            "multiplier": 1.0000000,
+            "name": "Текущий уровень",
+            "codename": "current_level",
+            "poll": true
+        },
+        {
+            "code": "D888",
+            "read_function": 3,
+            "write_function": null,
+            "address": "378",
+            "device_format": "uint16",
+            "multiplier": 1.0000000,
+            "name": "Текущая температура",
+            "codename": "cur_temp",
+            "poll": true
+        },
+        {
+            "code": "D999",
+            "read_function": 3,
+            "write_function": null,
+            "address": "3E7",
+            "device_format": "uint16",
+            "multiplier": 1.0000000,
+            "name": "Уровень воды",
+            "codename": "water_level",
+            "poll": true
+        },
+        {
+            "code": "D444",
+            "read_function": 3,
+            "write_function": null,
+            "address": "1BC",
+            "device_format": "uint16",
+            "multiplier": 1.0000000,
+            "name": "Текущий шаг",
+            "codename": "current_step",
+            "poll": true
+        },
+        {
+            "code": "D333",
+            "read_function": 3,
+            "write_function": null,
+            "address": "14D",
+            "device_format": "uint16",
+            "multiplier": 1.0000000,
+            "name": "Расход воды, л",
+            "codename": "water_spent",
+            "poll": true
+        },
+        {
+            "code": "D222",
+            "read_function": 3,
+            "write_function": null,
+            "address": "DE",
+            "device_format": "uint16",
+            "multiplier": 1.0000000,
+            "name": "Текущая программа",
+            "codename": "current_program",
+            "poll": true
+        },
+        {
+            "code": "D111",
+            "read_function": 3,
+            "write_function": null,
+            "address": "6F",
+            "device_format": "uint16",
+            "multiplier": 1.0000000,
+            "name": "Версия программы",
+            "codename": "program_version",
+            "poll": false
+        }
+    ]
+}

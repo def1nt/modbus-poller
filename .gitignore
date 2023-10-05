@@ -4,3 +4,4 @@ old/
 .vscode/
 *.sln
 *json
+!sample.json
