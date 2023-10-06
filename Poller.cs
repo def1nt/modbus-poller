@@ -8,6 +8,7 @@ public sealed class Poller
     private readonly Security _security;
     private readonly TcpClient _tcpClient;
     private readonly NetworkStream _stream;
+    private MachineParameters? machineParameters;
     private DeviceInfo? _deviceInfo;
 
     public Poller(TcpClient tcpClient, CancellationToken token = default)
@@ -24,6 +25,7 @@ public sealed class Poller
         try
         {
             await GetRemoteID(); // TODO: This, also, does authentication, so it should be called AuthenticateDevice()
+            machineParameters = new(_deviceInfo!.DeviceID); // stub, use real ID later
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();
@@ -76,10 +78,12 @@ public sealed class Poller
     private async Task<MachineData> Poll()
     {
         MachineData machineData = new(_deviceInfo!.DeviceID); // stub, use real ID later
-        MachineParameters machineParameters = new(_deviceInfo!.DeviceID); // stub, use real ID later
         RequestPacket request = new(Packet.PacketType.Request);
-        foreach (var parameter in machineParameters.Parameters)
+        for (int i = 0; i < machineParameters?.Parameters.Count; i++)
         {
+            var parameter = machineParameters.Parameters[i];
+            if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval)) continue;
+
             request.SetData(1, parameter.Function, StringToUShort(parameter.Address), 1);
             var response = await SendReceiveAsync(request);
             RegisterData registerData = new()
@@ -89,6 +93,9 @@ public sealed class Poller
                 Value = (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")), // TODO: Possible null reference
             };
             machineData.Data.Add(registerData);
+
+            parameter.LastPoll = DateTime.Now;
+            machineParameters.Parameters[i] = parameter;
         }
         machineData.programName = await GetCurrentProgramName();
         machineData.stepName = await GetCurrentStepName();

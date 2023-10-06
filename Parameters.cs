@@ -4,6 +4,7 @@ public struct RegisterInfo
     public byte Function;
     public string Name;
     public uint PollInterval;
+    public DateTime LastPoll;
     public double Multiplier;
 
     public RegisterInfo()
@@ -12,6 +13,7 @@ public struct RegisterInfo
         Function = 3;
         Name = "";
         PollInterval = 0;
+        LastPoll = DateTime.MinValue;
         Multiplier = 1.0;
     }
 
