@@ -9,6 +9,7 @@ public sealed class Poller
     private readonly TcpClient _tcpClient;
     private readonly NetworkStream _stream;
     private MachineParameters? machineParameters;
+    private MachineData? machineData;
     private DeviceInfo? _deviceInfo;
 
     public Poller(TcpClient tcpClient, CancellationToken token = default)
@@ -77,7 +78,7 @@ public sealed class Poller
 
     private async Task<MachineData> Poll()
     {
-        MachineData machineData = new(_deviceInfo!.DeviceID); // stub, use real ID later
+        machineData ??= new(_deviceInfo!.DeviceID); // stub, use real ID later
         RequestPacket request = new(Packet.PacketType.Request);
         for (int i = 0; i < machineParameters?.Parameters.Count; i++)
         {
@@ -92,7 +93,14 @@ public sealed class Poller
                 Name = parameter.Name,
                 Value = (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")), // TODO: Possible null reference
             };
-            machineData.Data.Add(registerData);
+            if (machineData.Data.Any(x => x.Name == registerData.Name))
+            {
+                machineData.Data[machineData.Data.FindIndex(x => x.Name == registerData.Name)] = registerData;
+            }
+            else
+            {
+                machineData.Data.Add(registerData);
+            }
 
             parameter.LastPoll = DateTime.Now;
             machineParameters.Parameters[i] = parameter;
