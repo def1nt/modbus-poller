@@ -58,6 +58,8 @@ public sealed class Poller
         if (bytesRead != 0)
         {
             response.SetData(buffer.Take(bytesRead).ToArray());
+            if (response.ExceptionCode != 0)
+                throw new Exception($"Modbus exception code: {response.ExceptionCode}");
         }
         return response;
     }
@@ -83,7 +85,8 @@ public sealed class Poller
         for (int i = 0; i < machineParameters?.Parameters.Count; i++)
         {
             var parameter = machineParameters.Parameters[i];
-            if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval)) continue;
+            if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval))
+                continue;
 
             request.SetData(1, parameter.Function, StringToUShort(parameter.Address), 1);
             var response = await SendReceiveAsync(request);
@@ -109,7 +112,7 @@ public sealed class Poller
         machineData.stepName = await GetCurrentStepName();
         Console.WriteLine(machineData.programName);
         Console.WriteLine(machineData.stepName);
-        await GetCounters();
+        await LogCounters();
         return machineData;
     }
 
@@ -161,17 +164,15 @@ public sealed class Poller
         return programNameString;
     }
 
-    private async Task GetCounters() // TODO: Temporary, remove later
+    private async Task LogCounters() // TODO: Temporary, remove later
     {
         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         Console.WriteLine();
 
-        await DebugLog(0x1B68, 1, "номер программы");
         await DebugLog(0x1B69, 1, "запусков");
         await DebugLog(0x04BC, 1, "шаг");
 
-        await DebugLog(0x141C, 1, "секунд");
-        await DebugLog(0x141E, 1, "часов");
+        await DebugLog(0x2A8, 1, "килограмм");
 
         Console.WriteLine();
     }
