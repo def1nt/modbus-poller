@@ -17,7 +17,7 @@ public sealed class Security
 
     private void GetMachineData(string deviceID) // This gets the data from the machine with provided ID
     {
-        var connString = "Host=192.168.105.12;Username=postgres;Password=sqladmin;Database=cloud_vmz";
+        var connString = AppSettings.PostgresConnectionString;
         using var conn = new NpgsqlConnection(connString);
         // TODO
     }
