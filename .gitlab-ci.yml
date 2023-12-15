@@ -30,7 +30,7 @@ testing image:
     - ssh ${TEST_USER}@${TEST_SERVER} "docker rm --force poller_testing || true"
     - ssh ${TEST_USER}@${TEST_SERVER} "docker run --rm --name poller_testing -d -p 8899:8899 ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
     - sleep 5
-    - telnet ${TEST_SERVER} 8899 2>/dev/null | grep -q "Connected"
+    - telnet ${TEST_SERVER} 8899 | grep -q "Connected"
   after_script:
     - ssh ${TEST_USER}@${TEST_SERVER} "docker rm --force poller_testing || true"
     - ssh ${TEST_USER}@${TEST_SERVER} "docker rmi ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
