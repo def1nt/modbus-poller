@@ -1,34 +1,49 @@
 stages:
+  - build
   - deploy_test
   - deploy_prod
 
-server deploying on test:
-  stage: deploy_test
+variables:
+  TEST_USER: user
+  PROD_USER: user
+  TEST_SERVER: "192.168.105.35"
+  PROD_SERVER: "192.168.105.3"
+
+building image:
+  stage: build
   script:
-    - echo "Deploying to testing server"
+    - echo "Building docker image"
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
     - docker build -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA} .
     - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}
     - docker rmi ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}
-    - ssh user@192.168.105.35 "docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}"
-    - ssh user@192.168.105.35 "docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-    - ssh user@192.168.105.35 "docker rm --force poller_testing || true"
-    - ssh user@192.168.105.35 "docker run --rm --name poller_testing -d -p 8899:8899 ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-    - telnet 192.168.105.35 8899 2>/dev/null | grep -q "Connected"
-  after_script:
-    - ssh user@192.168.105.35 "docker rm --force poller_testing || true"
-    - ssh user@192.168.105.35 "docker rmi ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   tags:
     - shell
 
-server deploying on prod:
+testing image:
+  stage: deploy_test
+  when: on_success
+  script:
+    - echo "Deploying to testing server"
+    - ssh ${TEST_USER}@${TEST_SERVER} "docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}"
+    - ssh ${TEST_USER}@${TEST_SERVER} "docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+    - ssh ${TEST_USER}@${TEST_SERVER} "docker rm --force poller_testing || true"
+    - ssh ${TEST_USER}@${TEST_SERVER} "docker run --rm --name poller_testing -d -p 8899:8899 ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+    - telnet ${TEST_SERVER} 8899 2>/dev/null | grep -q "Connected"
+  after_script:
+    - ssh ${TEST_USER}@${TEST_SERVER} "docker rm --force poller_testing || true"
+    - ssh ${TEST_USER}@${TEST_SERVER} "docker rmi ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+  tags:
+    - shell
+
+deploying on prod:
   stage: deploy_prod
   when: on_success
   script:
     - echo "Deploying service to production server"
-    - ssh user@192.168.105.3 "docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}"
-    - ssh user@192.168.105.3 "docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-    - ssh user@192.168.105.3 "docker rm --force poller || true"
-    - ssh user@192.168.105.3 "docker run --name poller -d --restart always -p 8899:8899 ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+    - ssh ${PROD_USER}@${PROD_SERVER} "docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}"
+    - ssh ${PROD_USER}@${PROD_SERVER} "docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+    - ssh ${PROD_USER}@${PROD_SERVER} "docker rm --force poller || true"
+    - ssh ${PROD_USER}@${PROD_SERVER} "docker run --name poller -d --restart always -p 8899:8899 ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   tags:
     - shell
