@@ -1,9 +1,51 @@
 using System.Globalization;
+using Npgsql;
 using System.Text.Json;
 
 public interface IRegisterInfoProvider
 {
     public IEnumerable<RegisterInfo> GetParameters();
+}
+
+public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
+{
+    private readonly string connectionString;
+    private readonly int seriesId;
+
+    public SQLRegisterInfoProvider(int seriesId)
+    {
+        this.connectionString = AppSettings.PostgresConnectionString;
+        this.seriesId = seriesId;
+    }
+
+    public IEnumerable<RegisterInfo> GetParameters()
+    {
+        using var connection = new NpgsqlConnection(connectionString);
+        connection.Open();
+        using var command = new NpgsqlCommand($"SELECT * FROM public.series_params WHERE series_id = '{seriesId}' AND poll = true", connection);
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            yield return new RegisterInfo
+            {
+                Address = reader.GetString(1),
+                Function = reader.GetByte(2),
+                PollInterval = (uint)reader.GetInt32(3), // TODO: null check!!!
+                Multiplier = reader.GetDouble(4),
+                Name = reader.GetString(5)
+            };
+        }
+    }
+
+    public IEnumerable<RegisterInfo> GetOperationalParameters()
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<RegisterInfo> GetStaticParameters()
+    {
+        throw new NotImplementedException();
+    }
 }
 
 public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
