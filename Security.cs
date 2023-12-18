@@ -28,20 +28,21 @@ public static class Authenticator
         {
             throw new NpgsqlException("Could not connect to database");
         }
-        using var cmd = new NpgsqlCommand("SELECT unique_id, code, name FROM device", conn);
+        using var cmd = new NpgsqlCommand("SELECT unique_id, code, series_id, name FROM device", conn);
         using var reader = cmd.ExecuteReader();
 
         while (reader.Read())
         {
             var uniqueID = (ulong)reader.GetInt64(0);
             var code = reader.GetInt32(1);
-            var name = reader.GetString(2);
-            yield return new DeviceInfo(uniqueID, code, uniqueID.ToString(), name);
+            var seriesID = reader.GetInt32(2);
+            var name = reader.GetString(3);
+            yield return new DeviceInfo(uniqueID, code, seriesID, uniqueID.ToString(), name);
         }
     }
 }
 
-public record DeviceInfo(ulong UniqueID, int Code, string DeviceID, string DeviceName); // TODO: FOR NOW UniqueID and DeviceID are the same
+public record DeviceInfo(ulong UniqueID, int Code, int SeriesID, string DeviceID, string DeviceName); // TODO: FOR NOW UniqueID and DeviceID are the same
 
 /*
     id integer NOT NULL DEFAULT nextval('device_id_seq'::regclass),
