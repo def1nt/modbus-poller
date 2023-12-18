@@ -27,13 +27,13 @@ public static class Authenticator
         {
             throw new NpgsqlException("Could not connect to database");
         }
-        using var cmd = new NpgsqlCommand("SELECT unique_id, code, number, name FROM devices", conn);
+        using var cmd = new NpgsqlCommand("SELECT unique_id, code, number, name FROM device", conn);
         using var reader = cmd.ExecuteReader();
 
         while (reader.Read())
         {
             var uniqueID = (uint)reader.GetInt64(0);
-            var code = int.Parse(reader.GetString(1)); // TODO: This is still varchar in the database, hello???
+            var code = reader.GetInt32(1); // TODO: This is still varchar in the database, hello???
             var number = reader.GetString(2);
             var name = reader.GetString(3);
             yield return new DeviceInfo(uniqueID, code, uniqueID.ToString(), name);
