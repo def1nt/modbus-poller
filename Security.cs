@@ -1,44 +1,56 @@
 // TODO: Everything in this file will change
-// TODO: Make this into a separate namespace
 
+using System.Data;
 using Npgsql;
 
-public sealed class Security
+namespace Security;
+
+public static class Authenticator
 {
-    public DeviceInfo CheckDeviceID(string deviceID) // This checks if the machine with provided ID exists in DB and is active and allowed
-    {
-        if (deviceID != "VMZ-1")
-        {
-            throw new Exception("Invalid device ID");
-        }
-
-        return new DeviceInfo("777777777777", "VMZ-1", "Active", "VMZ-1");
-    }
-
-    private void GetMachineData(string deviceID) // This gets the data from the machine with provided ID
-    {
-        var connString = AppSettings.PostgresConnectionString;
-        using var conn = new NpgsqlConnection(connString);
-        // TODO
-    }
-
-    public DeviceInfo? AuthenticateDevice(ushort series, ushort id, ushort secret)
+    public static DeviceInfo? AuthenticateDevice(uint deviceID, ushort secret)
     {
         foreach (var device in GetDeviceList())
         {
-            if (device.Item1 == series && device.Item2 == id && device.Item3 == secret)
+            if (device.UniqueID == deviceID && device.Code == secret)
             {
-                return new("777777777777", "VMZ-1", "Active", "VMZ-1"); // TODO: Return device itself
+                return device;
             }
         }
         return null;
     }
 
-    public IEnumerable<(ushort, ushort, ushort)> GetDeviceList()
+    private static IEnumerable<DeviceInfo> GetDeviceList()
     {
-        yield return (1, 1, 124); // Stub
-        yield return (1, 2, 125); // Stub
-    }
+        using var conn = new NpgsqlConnection(AppSettings.PostgresConnectionString);
+        conn.Open();
+        if (conn.State != ConnectionState.Open)
+        {
+            throw new NpgsqlException("Could not connect to database");
+        }
+        using var cmd = new NpgsqlCommand("SELECT unique_id, code, number, name FROM devices", conn);
+        using var reader = cmd.ExecuteReader();
 
+        while (reader.Read())
+        {
+            var uniqueID = (uint)reader.GetInt64(0);
+            var code = int.Parse(reader.GetString(1)); // TODO: This is still varchar in the database, hello???
+            var number = reader.GetString(2);
+            var name = reader.GetString(3);
+            yield return new DeviceInfo(uniqueID, code, uniqueID.ToString(), name);
+        }
+        yield return new DeviceInfo(65537, 124, "777777777777", "ВО-25.22241"); // TODO: Remove this stub
+    }
 }
-public record DeviceInfo(string DeviceID, string DeviceName, string DeviceStatus, string DeviceType);
+
+public record DeviceInfo(uint UniqueID, int Code, string DeviceID, string DeviceName); // TODO: FOR NOW UniqueID and DeviceID are the same
+
+/*
+    id integer NOT NULL DEFAULT nextval('device_id_seq'::regclass),
+    name character varying COLLATE pg_catalog."default" NOT NULL,
+    series_id integer,
+    "number" character varying COLLATE pg_catalog."default" NOT NULL,
+    code character varying COLLATE pg_catalog."default" NOT NULL,
+    added_at timestamp without time zone,
+    location json,
+    unique_id bigint NOT NULL,
+*/

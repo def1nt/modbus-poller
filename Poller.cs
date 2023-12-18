@@ -1,11 +1,12 @@
 using System.Globalization;
 using System.Net.Sockets;
+using Security;
 
 public sealed class Poller
 {
+    private const int IDLocation = 0x1400;
     private readonly CancellationToken token = default;
     private readonly IRepository _repository;
-    private readonly Security _security;
     private readonly TcpClient _tcpClient;
     private readonly NetworkStream _stream;
     private MachineParameters? machineParameters;
@@ -16,7 +17,6 @@ public sealed class Poller
     {
         this.token = token;
         _repository = RepositoryFactory.GetRepository("opentsdb");
-        _security = new();
         _tcpClient = tcpClient;
         _stream = _tcpClient.GetStream();
     }
@@ -25,7 +25,7 @@ public sealed class Poller
     {
         try
         {
-            await GetRemoteID(); // TODO: This, also, does authentication, so it should be called AuthenticateDevice()
+            await AuthenticateDevice();
             machineParameters = new(_deviceInfo!.DeviceID); // stub, use real ID later
             while (token.IsCancellationRequested == false)
             {
@@ -64,15 +64,17 @@ public sealed class Poller
         return response;
     }
 
-    private async Task GetRemoteID()
+    private async Task AuthenticateDevice()
     {
         RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, 0x1400, 3); // TODO: Register address may change!
+        request.SetData(1, 3, IDLocation, 3);
         var response = await SendReceiveAsync(request);
-        var series = response.Data[0];
+        var series = response.Data[0]; // TODO: check return value before accessing
         var id = response.Data[1];
         var secret = response.Data[2];
-        if ((_deviceInfo = _security.AuthenticateDevice(series, id, secret)) is null)
+        // combining series and id into one 32-bit integer for future compatibility
+        var deviceID = (uint)series << 16 | id;
+        if ((_deviceInfo = Authenticator.AuthenticateDevice(deviceID, secret)) is null)
         {
             throw new System.Security.SecurityException("Device authentication failed");
         }
@@ -96,9 +98,10 @@ public sealed class Poller
                 Name = parameter.Name,
                 Value = (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")), // TODO: Possible null reference
             };
-            if (machineData.Data.Any(x => x.Name == registerData.Name))
+            var existingDataIndex = machineData.Data.FindIndex(x => x.Name == registerData.Name);
+            if (existingDataIndex != -1)
             {
-                machineData.Data[machineData.Data.FindIndex(x => x.Name == registerData.Name)] = registerData;
+                machineData.Data[existingDataIndex] = registerData;
             }
             else
             {
@@ -119,7 +122,7 @@ public sealed class Poller
     private async Task<string> GetCurrentProgramName()
     {
         RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, 0x1B58, 16);
+        request.SetData(1, 3, 0x1B58, 16); // TODO: Move to config
         var response = await SendReceiveAsync(request);
         if (response.Data.Length == 16)
         {
@@ -131,7 +134,7 @@ public sealed class Poller
     private async Task<string> GetCurrentStepName()
     {
         RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, 0x1B6C, 8);
+        request.SetData(1, 3, 0x1B6C, 8); // TODO: Move to config
         var response = await SendReceiveAsync(request);
         if (response.Data.Length == 8)
         {
@@ -140,7 +143,7 @@ public sealed class Poller
         return string.Empty;
     }
 
-    private string ToUTFString(ushort[] ushorts)
+    private static string ToUTFString(ushort[] ushorts)
     {
         byte[] bytes = new byte[32];
         string programNameString = string.Empty;
@@ -189,7 +192,7 @@ public sealed class Poller
         }
     }
 
-    private ushort StringToUShort(string address)
+    private static ushort StringToUShort(string address)
     {
         return ushort.Parse(address, NumberStyles.HexNumber);
     }
