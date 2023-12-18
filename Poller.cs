@@ -72,7 +72,7 @@ public sealed class Poller
         var series = response.Data[0]; // TODO: check return value before accessing
         var id = response.Data[1];
         var secret = response.Data[2];
-        // combining series and id into one 32-bit integer for future compatibility
+        // combining series and id into one 32-bit integer for device id
         var deviceID = (uint)series << 16 | id;
         if ((_deviceInfo = Authenticator.AuthenticateDevice(deviceID, secret)) is null)
         {

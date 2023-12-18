@@ -7,8 +7,9 @@ namespace Security;
 
 public static class Authenticator
 {
-    public static DeviceInfo? AuthenticateDevice(uint deviceID, ushort secret)
+    public static DeviceInfo? AuthenticateDevice(ulong deviceID, ushort secret)
     {
+        if (deviceID == 65537) deviceID = 777777777777; // TODO: Remove this stub
         foreach (var device in GetDeviceList())
         {
             if (device.UniqueID == deviceID && device.Code == secret)
@@ -27,22 +28,20 @@ public static class Authenticator
         {
             throw new NpgsqlException("Could not connect to database");
         }
-        using var cmd = new NpgsqlCommand("SELECT unique_id, code, number, name FROM device", conn);
+        using var cmd = new NpgsqlCommand("SELECT unique_id, code, name FROM device", conn);
         using var reader = cmd.ExecuteReader();
 
         while (reader.Read())
         {
-            var uniqueID = (uint)reader.GetInt64(0);
-            var code = reader.GetInt32(1); // TODO: This is still varchar in the database, hello???
-            var number = reader.GetString(2);
-            var name = reader.GetString(3);
+            var uniqueID = (ulong)reader.GetInt64(0);
+            var code = reader.GetInt32(1);
+            var name = reader.GetString(2);
             yield return new DeviceInfo(uniqueID, code, uniqueID.ToString(), name);
         }
-        yield return new DeviceInfo(65537, 124, "777777777777", "ВО-25.22241"); // TODO: Remove this stub
     }
 }
 
-public record DeviceInfo(uint UniqueID, int Code, string DeviceID, string DeviceName); // TODO: FOR NOW UniqueID and DeviceID are the same
+public record DeviceInfo(ulong UniqueID, int Code, string DeviceID, string DeviceName); // TODO: FOR NOW UniqueID and DeviceID are the same
 
 /*
     id integer NOT NULL DEFAULT nextval('device_id_seq'::regclass),
