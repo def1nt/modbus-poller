@@ -26,7 +26,7 @@ public sealed class Poller
         try
         {
             await AuthenticateDevice();
-            machineParameters = new(_deviceInfo!.DeviceID); // stub, use real ID later
+            machineParameters = new(_deviceInfo!.SeriesID); // stub, use real ID later
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();

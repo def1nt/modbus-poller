@@ -38,13 +38,13 @@ public struct RegisterData
 
 public sealed class MachineParameters
 {
-    public string Model;
+    public int Series;
     public List<RegisterInfo> Parameters;
 
-    public MachineParameters(string model)
+    public MachineParameters(int series)
     {
-        Model = model;
-        IRegisterInfoProvider modelParametersProvider = new JSONRegisterInfoProvider(model);
+        Series = series;
+        IRegisterInfoProvider modelParametersProvider = new JSONRegisterInfoProvider(Series);
         Parameters = new List<RegisterInfo>();
         Parameters.AddRange(modelParametersProvider.GetParameters());
     }
@@ -52,7 +52,7 @@ public sealed class MachineParameters
     public override string ToString()
     {
         var result = new System.Text.StringBuilder();
-        result.AppendLine($"Model: {Model}");
+        result.AppendLine($"Model: {Series}");
         foreach (var parameter in Parameters)
         {
             result.AppendLine($"Address: {parameter.Address}");

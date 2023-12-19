@@ -30,21 +30,11 @@ public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
             {
                 Address = reader.GetString(1),
                 Function = reader.GetByte(2),
-                PollInterval = (uint)reader.GetInt32(3), // TODO: null check!!!
+                PollInterval = reader.IsDBNull(3) ? 0 : (uint)reader.GetInt32(3),
                 Multiplier = reader.GetDouble(4),
                 Name = reader.GetString(5)
             };
         }
-    }
-
-    public IEnumerable<RegisterInfo> GetOperationalParameters()
-    {
-        throw new NotImplementedException();
-    }
-
-    public IEnumerable<RegisterInfo> GetStaticParameters()
-    {
-        throw new NotImplementedException();
     }
 }
 
@@ -52,9 +42,9 @@ public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
 {
     public JsonDocument jsonDocument;
 
-    public JSONRegisterInfoProvider(string modelId)
+    public JSONRegisterInfoProvider(int seriesId)
     {
-        string path = $"{modelId}.json";
+        string path = $"{seriesId}.json";
         if (!File.Exists(path))
         {
             throw new FileNotFoundException($"File {path} not found");
@@ -87,7 +77,7 @@ public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
         }
     }
 
-    private object? GetValueOrNull(JsonElement jsonElement, string name, Type type)
+    private static object? GetValueOrNull(JsonElement jsonElement, string name, Type type)
     {
         if (jsonElement.TryGetProperty(name, out JsonElement element))
         {
@@ -104,15 +94,4 @@ public sealed class JSONRegisterInfoProvider : IRegisterInfoProvider
         }
         return null;
     }
-
-    public IEnumerable<RegisterInfo> GetOperationalParameters()
-    {
-        throw new NotImplementedException();
-    }
-
-    public IEnumerable<RegisterInfo> GetStaticParameters()
-    {
-        throw new NotImplementedException();
-    }
-
 }
