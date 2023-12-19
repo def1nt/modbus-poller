@@ -44,7 +44,7 @@ public sealed class MachineParameters
     public MachineParameters(int series)
     {
         Series = series;
-        IRegisterInfoProvider modelParametersProvider = new JSONRegisterInfoProvider(Series);
+        IRegisterInfoProvider modelParametersProvider = new SQLRegisterInfoProvider(Series);
         Parameters = new List<RegisterInfo>();
         Parameters.AddRange(modelParametersProvider.GetParameters());
     }
