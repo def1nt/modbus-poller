@@ -59,8 +59,8 @@ public sealed class Poller
         {
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
-                if (!(response.ExceptionCode == 2 || request.Address == 0x07DF)) // TODO: Remove this hack
-                throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
+                if (response.ExceptionCode == 2) // TODO: Remove this hack
+                    throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
                 else Console.WriteLine($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}"); // TODO: Remove this hack
         }
         return response;
@@ -94,6 +94,7 @@ public sealed class Poller
 
             request.SetData(1, parameter.Function, StringToUShort(parameter.Address), 1);
             var response = await SendReceiveAsync(request);
+            if (response.Data.Length == 0) continue;
             RegisterData registerData = new()
             {
                 Timestamp = DateTime.Now,
