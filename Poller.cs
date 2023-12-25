@@ -59,7 +59,7 @@ public sealed class Poller
         {
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
-                throw new Exception($"Modbus exception code: {response.ExceptionCode}");
+                throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
         }
         return response;
     }

@@ -51,6 +51,27 @@ public abstract class Packet
 
 public sealed class RequestPacket : Packet
 {
+    public uint Address
+    {
+        get
+        {
+            if (_data.Length < 4)
+                throw new ArgumentException("Invalid packet length");
+            byte[] bytes = new byte[2];
+            Array.Copy(_data, 2, bytes, 0, 2);
+            Array.Reverse(bytes); // Properly handling endianness
+            return BitConverter.ToUInt16(bytes);
+        }
+    }
+    public uint FunctionCode
+    {
+        get
+        {
+            if (_data.Length < 2)
+                throw new ArgumentException("Invalid packet length");
+            return _data[1];
+        }
+    }
     public byte[] Data { get => _data; }
     public RequestPacket(PacketType kind) : base(kind)
     {
