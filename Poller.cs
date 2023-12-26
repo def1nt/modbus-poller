@@ -59,7 +59,7 @@ public sealed class Poller
         {
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
-                if (response.ExceptionCode == 2) // TODO: Remove this hack
+                if (response.ExceptionCode != 2) // TODO: Remove this hack
                     throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
                 else Console.WriteLine($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}"); // TODO: Remove this hack
         }
