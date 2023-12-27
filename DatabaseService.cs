@@ -1,11 +1,7 @@
 using Npgsql;
+using System.Data;
 
-public interface IDatabaseService
-{
-    public DatabaseService GetInstance(string connectionString);
-}
-
-public class DatabaseService : IDatabaseService
+public class DatabaseService
 {
     private readonly string _connectionString;
     private readonly NpgsqlConnection _connection;
@@ -18,9 +14,20 @@ public class DatabaseService : IDatabaseService
         _connection = new NpgsqlConnection(_connectionString);
     }
 
-    public DatabaseService GetInstance(string connectionString)
+    public static DatabaseService GetInstance()
     {
-        _instance ??= new DatabaseService(connectionString);
+        _instance ??= new DatabaseService(AppSettings.PostgresConnectionString);
         return _instance;
+    }
+
+    public NpgsqlDataReader GetDataReader(string query)
+    {
+        _connection.Open();
+        if (_connection.State != ConnectionState.Open)
+        {
+            throw new NpgsqlException("Could not connect to database");
+        }
+        var cmd = new NpgsqlCommand(query, _connection);
+        return cmd.ExecuteReader();
     }
 }
