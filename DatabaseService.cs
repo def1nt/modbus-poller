@@ -22,7 +22,7 @@ public class DatabaseService
 
     public NpgsqlDataReader GetDataReader(string query)
     {
-        _connection.Open();
+        if (_connection.State != ConnectionState.Open) _connection.Open();
         if (_connection.State != ConnectionState.Open)
         {
             throw new NpgsqlException("Could not connect to database");
