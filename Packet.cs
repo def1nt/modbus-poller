@@ -1,3 +1,24 @@
+namespace Modbus;
+public enum FunctionCode : byte
+{
+    ReadCoils = 0x01,
+    ReadDiscreteInputs = 0x02,
+    ReadHoldingRegisters = 0x03,
+    ReadInputRegisters = 0x04,
+    WriteSingleCoil = 0x05,
+    WriteSingleRegister = 0x06,
+    WriteMultipleCoils = 0x0F,
+    WriteMultipleRegisters = 0x10,
+    ReadCoilsException = 0x81,
+    ReadDiscreteInputsException = 0x82,
+    ReadHoldingRegistersException = 0x83,
+    ReadInputRegistersException = 0x84,
+    WriteSingleCoilException = 0x85,
+    WriteSingleRegisterException = 0x86,
+    WriteMultipleCoilsException = 0x8F,
+    WriteMultipleRegistersException = 0x90
+}
+
 public abstract class Packet
 {
     public enum PacketType

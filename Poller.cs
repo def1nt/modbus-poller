@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net.Sockets;
 using Security;
+using Modbus;
 
 public sealed class Poller
 {
@@ -61,7 +62,7 @@ public sealed class Poller
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
                 if (response.ExceptionCode != 2) // TODO: Remove this hack
-                    throw new Exception($"{DateTime.Now} - Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
+                    throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
                 else Console.WriteLine($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}"); // TODO: Remove this hack
         }
         return response;
@@ -74,7 +75,7 @@ public sealed class Poller
         var response = await SendReceiveAsync(request);
         if (response.Data.Length != 3)
         {
-            throw new System.Security.SecurityException($"{DateTime.Now} - Device authentication failed: invalid response length");
+            throw new System.Security.SecurityException($"Device authentication failed: invalid response length");
         }
         var series = response.Data[0];
         var id = response.Data[1];
@@ -83,7 +84,7 @@ public sealed class Poller
         var deviceID = (uint)series << 16 | id;
         if ((_deviceInfo = Authenticator.AuthenticateDevice(deviceID, secret)) is null)
         {
-            throw new System.Security.SecurityException($"{DateTime.Now} - Device authentication failed with credentials: " + deviceID + " " + secret);
+            throw new System.Security.SecurityException($"Device authentication failed with credentials: " + deviceID + " " + secret);
         }
     }
 
