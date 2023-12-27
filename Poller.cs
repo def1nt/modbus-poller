@@ -27,6 +27,7 @@ public sealed class Poller
         {
             await AuthenticateDevice();
             machineParameters = new(_deviceInfo!.SeriesID); // stub, use real ID later
+            Console.WriteLine($"{DateTime.Now} - Client from {_tcpClient.Client.RemoteEndPoint} authenticated as {_deviceInfo.DeviceName} with ID {_deviceInfo.DeviceID}");
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();
@@ -36,7 +37,7 @@ public sealed class Poller
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Poller.RunAsync() {e.GetType()} exception: {e.Message}");
+            Console.WriteLine($"{DateTime.Now} - Poller.RunAsync() {e.GetType()} exception: {e.Message}");
             if (Environment.GetEnvironmentVariable("DEBUG") is not null)
                 Console.WriteLine($"Trace: {e.StackTrace}");
         }
@@ -60,7 +61,7 @@ public sealed class Poller
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
                 if (response.ExceptionCode != 2) // TODO: Remove this hack
-                    throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
+                    throw new Exception($"{DateTime.Now} - Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
                 else Console.WriteLine($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}"); // TODO: Remove this hack
         }
         return response;
@@ -71,14 +72,18 @@ public sealed class Poller
         RequestPacket request = new(Packet.PacketType.Request);
         request.SetData(1, 3, IDLocation, 3);
         var response = await SendReceiveAsync(request);
-        var series = response.Data[0]; // TODO: check return value before accessing
+        if (response.Data.Length != 3)
+        {
+            throw new System.Security.SecurityException($"{DateTime.Now} - Device authentication failed: invalid response length");
+        }
+        var series = response.Data[0];
         var id = response.Data[1];
         var secret = response.Data[2];
         // combining series and id into one 32-bit integer for device id
         var deviceID = (uint)series << 16 | id;
         if ((_deviceInfo = Authenticator.AuthenticateDevice(deviceID, secret)) is null)
         {
-            throw new System.Security.SecurityException("Device authentication failed");
+            throw new System.Security.SecurityException($"{DateTime.Now} - Device authentication failed with credentials: " + deviceID + " " + secret);
         }
     }
 
