@@ -38,7 +38,7 @@ public sealed class Poller
         }
         catch (Exception e)
         {
-            Console.WriteLine($"{DateTime.Now} - Poller.RunAsync() {e.GetType()} exception: {e.Message}");
+            Console.WriteLine($"{DateTime.Now} - Poller.RunAsync() {e.GetType()} exception: {e.Message} from {machineData?.DeviceID}");
             if (Environment.GetEnvironmentVariable("DEBUG") is not null)
                 Console.WriteLine($"Trace: {e.StackTrace}");
         }
@@ -62,8 +62,8 @@ public sealed class Poller
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
                 if (response.ExceptionCode != 2) // TODO: Remove this hack
-                    throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}");
-                else Console.WriteLine($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} {request.Address}"); // TODO: Remove this hack
+                    throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address}");
+                else Console.WriteLine($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address} from {machineData?.DeviceID}"); // TODO: Remove this hack
         }
         return response;
     }

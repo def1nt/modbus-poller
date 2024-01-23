@@ -19,7 +19,7 @@ catch (TaskCanceledException)
 }
 catch (Exception e)
 {
-    Console.WriteLine($"tcpListener.Start() exception: {e.Message}");
+    Console.WriteLine($"{DateTime.Now} - tcpListener.Start() exception: {e.Message}");
     if (Environment.GetEnvironmentVariable("DEBUG") is not null)
         Console.WriteLine($"Trace: {e.StackTrace}");
 }
