@@ -122,8 +122,6 @@ public sealed class Poller
         }
         machineData.programName = await GetCurrentProgramName();
         machineData.stepName = await GetCurrentStepName();
-        Console.WriteLine(machineData.programName);
-        Console.WriteLine(machineData.stepName);
         await LogCounters();
         return machineData;
     }
@@ -179,12 +177,19 @@ public sealed class Poller
     private async Task LogCounters() // TODO: Temporary, remove later
     {
         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        Console.WriteLine(machineData?.programName);
+        Console.WriteLine(machineData?.stepName);
         Console.WriteLine();
 
         await DebugLog(0x1B69, 1, "запусков");
         await DebugLog(0x04BC, 1, "шаг");
-
         await DebugLog(0x2A8, 1, "килограмм");
+        await DebugLog(0x3e0, 1, 1, "");
+        await DebugLog(0x3e1, 1, 1, "");
+        await DebugLog(0x3e3, 1, 1, "");
+        await DebugLog(0x7df, 1, 1, "");
+        await DebugLog(0x7e6, 1, 1, "");
+        await DebugLog(0x7e7, 1, 1, "");
 
         Console.WriteLine();
     }
