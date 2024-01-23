@@ -200,6 +200,7 @@ public sealed class Poller
         RequestPacket request = new(Packet.PacketType.Request);
         request.SetData(1, function, address, count);
         var response = await SendReceiveAsync(request);
+        if (response.Data.Length == 0) return;
         for (int i = 0; i < count; i++)
         {
             Console.WriteLine($"{address + i:X2}: {response.Data[i]} {name.ElementAtOrDefault(i) ?? string.Empty}");
