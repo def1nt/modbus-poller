@@ -184,12 +184,12 @@ public sealed class Poller
         await DebugLog(0x1B69, 1, "запусков");
         await DebugLog(0x04BC, 1, "шаг");
         await DebugLog(0x2A8, 1, "килограмм");
-        await DebugLog(0x3e0, 1, 1, "");
-        await DebugLog(0x3e1, 1, 1, "");
-        await DebugLog(0x3e3, 1, 1, "");
-        await DebugLog(0x7df, 1, 1, "");
-        await DebugLog(0x7e6, 1, 1, "");
-        await DebugLog(0x7e7, 1, 1, "");
+        await DebugLog(0x3e0, 3, 1, "");
+        await DebugLog(0x3e1, 3, 1, "");
+        await DebugLog(0x3e3, 3, 1, "");
+        await DebugLog(0x7df, 3, 1, "");
+        await DebugLog(0x7e6, 3, 1, "");
+        await DebugLog(0x7e7, 3, 1, "");
 
         Console.WriteLine();
     }
