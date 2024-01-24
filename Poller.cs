@@ -13,6 +13,8 @@ public sealed class Poller
     private MachineParameters? machineParameters;
     private MachineData? machineData;
     private DeviceInfo? _deviceInfo;
+    private int retries = 1;
+    private int maxRetries = 3;
 
     public Poller(TcpClient tcpClient, CancellationToken token = default)
     {
@@ -52,10 +54,24 @@ public sealed class Poller
     private async Task<ResponsePacket> SendReceiveAsync(RequestPacket request) // TODO: What if there is no response?
     {
         byte[] buffer = new byte[256];
-
-        await _stream.WriteAsync(request.Data).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
-        int bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), token).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
-
+        int bytesRead;
+        try 
+        {
+            await _stream.WriteAsync(request.Data).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
+            bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), token).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
+        }
+        catch (TimeoutException)
+        {
+            if (retries > 0)
+            {
+                retries -= 1;
+                return await SendReceiveAsync(request);
+            }
+            else
+            {
+                throw new TimeoutException($"Modbus request timed out: {request.FunctionCode} at {request.Address} from {machineData?.DeviceID}");
+            }
+        }
         var response = new ResponsePacket(Packet.PacketType.Response);
         if (bytesRead != 0)
         {
@@ -123,6 +139,7 @@ public sealed class Poller
         machineData.programName = await GetCurrentProgramName();
         machineData.stepName = await GetCurrentStepName();
         await LogCounters();
+        if (retries < maxRetries) retries += 1;
         return machineData;
     }
 
