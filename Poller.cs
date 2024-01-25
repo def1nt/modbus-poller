@@ -14,7 +14,7 @@ public sealed class Poller
     private MachineData? machineData;
     private DeviceInfo? _deviceInfo;
     private int retries = 1;
-    private int maxRetries = 3;
+    private readonly int maxRetries = 3;
 
     public Poller(TcpClient tcpClient, CancellationToken token = default)
     {
@@ -51,11 +51,11 @@ public sealed class Poller
         }
     }
 
-    private async Task<ResponsePacket> SendReceiveAsync(RequestPacket request) // TODO: What if there is no response?
+    private async Task<ResponsePacket> SendReceiveAsync(RequestPacket request)
     {
         byte[] buffer = new byte[256];
         int bytesRead;
-        try 
+        try
         {
             await _stream.WriteAsync(request.Data).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
             bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), token).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
@@ -69,7 +69,7 @@ public sealed class Poller
             }
             else
             {
-                throw new TimeoutException($"Modbus request timed out: {request.FunctionCode} at {request.Address} from {machineData?.DeviceID}");
+                throw new TimeoutException($"Modbus request timed out: {request.FunctionCode} at {request.Address}");
             }
         }
         var response = new ResponsePacket(Packet.PacketType.Response);
@@ -106,7 +106,8 @@ public sealed class Poller
 
     private async Task<MachineData> Poll()
     {
-        machineData ??= new(_deviceInfo!.DeviceID); // stub, use real ID later
+        if (_deviceInfo is null) throw new System.Security.SecurityException($"Device authentication failed: device info is null");
+        machineData ??= new(_deviceInfo.DeviceID); // TODO: Decide on which one to use
         RequestPacket request = new(Packet.PacketType.Request);
         for (int i = 0; i < machineParameters?.Parameters.Count; i++)
         {
@@ -114,14 +115,14 @@ public sealed class Poller
             if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval))
                 continue;
 
-            request.SetData(1, parameter.Function, StringToUShort(parameter.Address), 1);
+            request.SetData(1, parameter.Function, StringToUShort(parameter.Address), 1); // TODO: Implement crutch for f1 and f3 on some addresses
             var response = await SendReceiveAsync(request);
             if (response.Data.Length == 0) continue;
             RegisterData registerData = new()
             {
                 Timestamp = DateTime.Now,
                 Name = parameter.Name,
-                Value = (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")), // TODO: Possible null reference
+                Value = (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
             };
             var existingDataIndex = machineData.Data.FindIndex(x => x.Name == registerData.Name);
             if (existingDataIndex != -1)
@@ -145,22 +146,20 @@ public sealed class Poller
 
     private async Task<string> GetCurrentProgramName()
     {
-        RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, 0x1B58, 16); // TODO: Move to config
-        var response = await SendReceiveAsync(request);
-        if (response.Data.Length == 16)
-        {
-            return ToUTFString(response.Data);
-        }
-        return string.Empty;
+        return await GetString(0x1B58, 16);
     }
 
     private async Task<string> GetCurrentStepName()
     {
+        return await GetString(0x1B6C, 8);
+    }
+
+    private async Task<string> GetString(ushort address, ushort count)
+    {
         RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, 0x1B6C, 8); // TODO: Move to config
+        request.SetData(1, 3, address, count);
         var response = await SendReceiveAsync(request);
-        if (response.Data.Length == 8)
+        if (response.Data.Length == count)
         {
             return ToUTFString(response.Data);
         }
