@@ -72,7 +72,7 @@ public sealed class Poller
                 throw new TimeoutException($"Modbus request timed out: {request.FunctionCode} at {request.Address}");
             }
         }
-        var response = new ResponsePacket(Packet.PacketType.Response);
+        ResponsePacket response = new();
         if (bytesRead != 0)
         {
             response.SetData(buffer.Take(bytesRead).ToArray());
@@ -86,8 +86,7 @@ public sealed class Poller
 
     private async Task AuthenticateDevice()
     {
-        RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, IDLocation, 3);
+        RequestPacket request = new(1, 3, IDLocation, 3);
         var response = await SendReceiveAsync(request);
         if (response.Data.Length != 3)
         {
@@ -108,7 +107,7 @@ public sealed class Poller
     {
         if (_deviceInfo is null) throw new System.Security.SecurityException($"Device authentication failed: device info is null");
         machineData ??= new(_deviceInfo.DeviceID); // TODO: Decide on which one to use
-        RequestPacket request = new(Packet.PacketType.Request);
+        RequestPacket request = new();
         for (int i = 0; i < machineParameters?.Parameters.Count; i++)
         {
             var parameter = machineParameters.Parameters[i];
@@ -156,8 +155,7 @@ public sealed class Poller
 
     private async Task<string> GetString(ushort address, ushort count)
     {
-        RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, 3, address, count);
+        RequestPacket request = new(1, 3, address, count);
         var response = await SendReceiveAsync(request);
         if (response.Data.Length == count)
         {
@@ -219,8 +217,7 @@ public sealed class Poller
     private async Task DebugLog(ushort address, ushort count, params string[] name) => await DebugLog(address, 3, count, name);
     private async Task DebugLog(ushort address, byte function, ushort count, params string[] name)
     {
-        RequestPacket request = new(Packet.PacketType.Request);
-        request.SetData(1, function, address, count);
+        RequestPacket request = new(1, function, address, count);
         var response = await SendReceiveAsync(request);
         if (response.Data.Length == 0) return;
         for (int i = 0; i < count; i++)

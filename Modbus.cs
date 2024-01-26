@@ -21,19 +21,10 @@ public enum FunctionCode : byte
 
 public abstract class Packet
 {
-    public enum PacketType
-    {
-        Request,
-        Response
-    }
-
     protected byte[] _data;
 
-    public PacketType Kind { get; protected init; }
-
-    public Packet(PacketType kind)
+    public Packet()
     {
-        Kind = kind;
         _data = Array.Empty<byte>();
     }
 
@@ -94,16 +85,15 @@ public sealed class RequestPacket : Packet
         }
     }
     public byte[] Data { get => _data; }
-    public RequestPacket(PacketType kind) : base(kind)
+
+    public RequestPacket()
     {
-        if (kind == PacketType.Request)
-        {
-            _data = new byte[8];
-        }
-        else
-        {
-            throw new ArgumentException("Invalid packet type");
-        }
+        _data = new byte[8];
+    }
+
+    public RequestPacket(byte UnitID, byte FunctionCode, ushort FirstAdress, ushort NumberOfPoints)
+    {
+        SetData(UnitID, FunctionCode, FirstAdress, NumberOfPoints);
     }
 
     public void SetData(byte UnitID, byte FunctionCode, ushort FirstAdress, ushort NumberOfPoints)
@@ -200,12 +190,14 @@ public sealed class ResponsePacket : Packet
         }
     }
 
-    public ResponsePacket(PacketType kind) : base(kind)
+    public ResponsePacket()
     {
-        if (kind != PacketType.Response)
-        {
-            throw new ArgumentException("Invalid packet type");
-        }
+        _data = Array.Empty<byte>();
+    }
+
+    public ResponsePacket(byte[] data)
+    {
+        SetData(data);
     }
 
     public void SetData(byte[] bytes)
