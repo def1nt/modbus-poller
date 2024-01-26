@@ -91,7 +91,7 @@ public sealed class RequestPacket : Packet
         _data = new byte[8];
     }
 
-    public RequestPacket(byte UnitID, byte FunctionCode, ushort FirstAdress, ushort NumberOfPoints)
+    public RequestPacket(byte UnitID, byte FunctionCode, ushort FirstAdress, ushort NumberOfPoints) : this()
     {
         SetData(UnitID, FunctionCode, FirstAdress, NumberOfPoints);
     }
