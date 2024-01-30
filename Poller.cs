@@ -5,7 +5,9 @@ using Modbus;
 
 public sealed class Poller
 {
-    private const int IDLocation = 0x1400;
+    private const ushort IDLocation = 0x1400;
+    private const ushort ProgramNameLocation = 0x1B58;
+    private const ushort StepNameLocation = 0x1B6C;
     private readonly CancellationToken token = default;
     private readonly IRepository _repository;
     private readonly TcpClient _tcpClient;
@@ -136,21 +138,11 @@ public sealed class Poller
             parameter.LastPoll = DateTime.Now;
             machineParameters.Parameters[i] = parameter;
         }
-        machineData.programName = await GetCurrentProgramName();
-        machineData.stepName = await GetCurrentStepName();
+        machineData.programName = await GetString(ProgramNameLocation, 16);
+        machineData.stepName = await GetString(StepNameLocation, 8);
         await LogCounters();
         if (retries < maxRetries) retries += 1;
         return machineData;
-    }
-
-    private async Task<string> GetCurrentProgramName()
-    {
-        return await GetString(0x1B58, 16);
-    }
-
-    private async Task<string> GetCurrentStepName()
-    {
-        return await GetString(0x1B6C, 8);
     }
 
     private async Task<string> GetString(ushort address, ushort count)
@@ -198,18 +190,6 @@ public sealed class Poller
         await DebugLog(0x1B69, 1, "запусков");
         await DebugLog(0x04BC, 1, "шаг");
         await DebugLog(0x2A8, 1, "килограмм");
-        await DebugLog(0x3e0, 3, 1, "f3");
-        await DebugLog(0x3e1, 3, 1, "f3");
-        await DebugLog(0x3e3, 3, 1, "f3");
-        await DebugLog(0x7df, 3, 1, "f3");
-        await DebugLog(0x7e6, 3, 1, "f3");
-        await DebugLog(0x7e7, 3, 1, "f3");
-        await DebugLog(0x3e0, 1, 1, "f1");
-        await DebugLog(0x3e1, 1, 1, "f1");
-        await DebugLog(0x3e3, 1, 1, "f1");
-        await DebugLog(0x7df, 1, 1, "f1");
-        await DebugLog(0x7e6, 1, 1, "f1");
-        await DebugLog(0x7e7, 1, 1, "f1");
 
         Console.WriteLine();
     }
