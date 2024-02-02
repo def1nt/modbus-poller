@@ -52,7 +52,7 @@ public sealed class DatabaseRepository : IRepository
                     cmd.Parameters.AddWithValue("Name", row.Name);
                     cmd.Parameters.AddWithValue("Value", row.Value);
                     cmd.Parameters.AddWithValue("Timestamp", row.Timestamp);
-                    cmd.Parameters.AddWithValue("DeviceID", data.DeviceID);
+                    cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
                     await cmd.ExecuteNonQueryAsync(_token);
                 }
             }
@@ -126,7 +126,7 @@ public sealed class OpenTSDBRepository : IRepository
                 INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at) VALUES (@DeviceID, @Error, @Cycle, @Timestamp)
                 """, conn))
                 {
-                    cmd.Parameters.AddWithValue("DeviceID", data.DeviceID);
+                    cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
                     cmd.Parameters.AddWithValue("Error", errorCode);
                     cmd.Parameters.AddWithValue("Cycle", int.Parse(data.Data.Where(x => x.Name == "Цикл стирки").FirstOrDefault().Value));
                     cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
@@ -141,7 +141,7 @@ public sealed class OpenTSDBRepository : IRepository
                 DELETE FROM device_cp WHERE unique_id = @DeviceID
                 """, conn))
             {
-                cmd.Parameters.AddWithValue("DeviceID", data.DeviceID);
+                cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
                 await cmd.ExecuteNonQueryAsync(_token);
             }
 
@@ -149,7 +149,7 @@ public sealed class OpenTSDBRepository : IRepository
                 INSERT INTO device_cp (unique_id, program_name, step_name, added_at) VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp)
                 """, conn))
             {
-                cmd.Parameters.AddWithValue("DeviceID", data.DeviceID);
+                cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
                 cmd.Parameters.AddWithValue("ProgramName", data.programName);
                 cmd.Parameters.AddWithValue("StepName", data.stepName);
                 cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
@@ -166,7 +166,7 @@ public sealed class OpenTSDBRepository : IRepository
                 VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp)
                 """, conn))
             {
-                cmd.Parameters.AddWithValue("DeviceID", data.DeviceID);
+                cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
                 cmd.Parameters.AddWithValue("WashCycle", wash_cycle);
                 cmd.Parameters.AddWithValue("AllOperatingTime", all_operating_time);
                 cmd.Parameters.AddWithValue("AllWaterConsumption", all_water_consumption);
