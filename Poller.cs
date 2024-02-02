@@ -88,27 +88,29 @@ public sealed class Poller
 
     private async Task AuthenticateDevice()
     {
-        RequestPacket request = new(1, 3, IDLocation, 3);
+        RequestPacket request = new(1, 3, IDLocation, 4);
         var response = await SendReceiveAsync(request);
-        if (response.Data.Length != 3)
+        if (response.Data.Length != 4)
         {
             throw new System.Security.SecurityException($"Device authentication failed: invalid response length");
         }
         var series = response.Data[0];
         var id = response.Data[1];
         var secret = response.Data[2];
+        var plcversion = response.Data[3];
         // combining series and id into one 32-bit integer for device id
         var deviceID = (uint)series << 16 | id;
         if ((_deviceInfo = Authenticator.AuthenticateDevice(deviceID, secret)) is null)
         {
             throw new System.Security.SecurityException($"Device authentication failed with credentials: " + deviceID + " " + secret);
         }
+        _deviceInfo = _deviceInfo with { PLCVersion = plcversion };
     }
 
     private async Task<MachineData> Poll()
     {
         if (_deviceInfo is null) throw new System.Security.SecurityException($"Device authentication failed: device info is null");
-        machineData ??= new(_deviceInfo.DeviceID); // TODO: Decide on which one to use
+        machineData ??= new(_deviceInfo.DeviceID);
         RequestPacket request = new();
         for (int i = 0; i < machineParameters?.Parameters.Count; i++)
         {

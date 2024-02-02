@@ -12,7 +12,7 @@ public static class Authenticator
         if (deviceID == 65537) deviceID = 777777777777; // TODO: Remove this stub
         foreach (var device in GetDeviceList())
         {
-            if (device.UniqueID == deviceID && device.Code == secret)
+            if (device.DeviceID == deviceID && device.Code == secret)
             {
                 return device;
             }
@@ -33,16 +33,16 @@ public static class Authenticator
 
         while (reader.Read())
         {
-            var uniqueID = (ulong)reader.GetInt64(0);
+            var deviceID = (ulong)reader.GetInt64(0);
             var code = reader.GetInt32(1);
             var seriesID = reader.GetInt32(2);
             var name = reader.GetString(3);
-            yield return new DeviceInfo(uniqueID, code, seriesID, uniqueID.ToString(), name);
+            yield return new DeviceInfo(deviceID, code, seriesID, 0, name);
         }
     }
 }
 
-public record DeviceInfo(ulong UniqueID, int Code, int SeriesID, string DeviceID, string DeviceName); // TODO: FOR NOW UniqueID and DeviceID are the same
+public record DeviceInfo(ulong DeviceID, int Code, int SeriesID, int PLCVersion, string DeviceName); // TODO: FOR NOW UniqueID and DeviceID are the same
 
 /*
     id integer NOT NULL DEFAULT nextval('device_id_seq'::regclass),

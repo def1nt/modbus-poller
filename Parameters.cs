@@ -66,13 +66,13 @@ public sealed class MachineParameters
 
 public sealed class MachineData
 {
-    public string DeviceID;
+    public ulong DeviceID;
     public string Model;
     public string programName;
     public string stepName;
     public List<RegisterData> Data;
 
-    public MachineData(string deviceId)
+    public MachineData(ulong deviceId)
     {
         DeviceID = deviceId;
         Model = string.Empty;
