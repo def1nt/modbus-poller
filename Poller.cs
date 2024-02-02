@@ -31,8 +31,9 @@ public sealed class Poller
         try
         {
             await AuthenticateDevice();
+            Console.WriteLine($"{DateTime.Now} - Client from {_tcpClient.Client.RemoteEndPoint} authenticated as {_deviceInfo!.DeviceName} with ID {_deviceInfo.DeviceID}");
+            if (_deviceInfo!.Active == false) await InfiniteLoop();
             machineParameters = new(_deviceInfo!.SeriesID); // stub, use real ID later
-            Console.WriteLine($"{DateTime.Now} - Client from {_tcpClient.Client.RemoteEndPoint} authenticated as {_deviceInfo.DeviceName} with ID {_deviceInfo.DeviceID}");
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();
@@ -212,4 +213,6 @@ public sealed class Poller
     {
         return ushort.Parse(address, NumberStyles.HexNumber);
     }
+
+    private Task InfiniteLoop() => Task.Run(() => { while (token.IsCancellationRequested == false) { Thread.Sleep(1000); } });
 }
