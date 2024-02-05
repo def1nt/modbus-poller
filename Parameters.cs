@@ -1,4 +1,4 @@
-public struct RegisterInfo
+public record RegisterInfo
 {
     public string Address;
     public byte Function;
@@ -6,6 +6,7 @@ public struct RegisterInfo
     public uint PollInterval;
     public DateTime LastPoll;
     public double Multiplier;
+    public int Version;
 
     public RegisterInfo()
     {
@@ -15,12 +16,13 @@ public struct RegisterInfo
         PollInterval = 0;
         LastPoll = DateTime.MinValue;
         Multiplier = 1.0;
+        Version = 0;
     }
 
-    public readonly override string ToString() => $"Address: {Address}\nFunction: {Function}\nName: {Name}\nPoll interval: {PollInterval}\nMultiplier: {Multiplier}\n";
+    public override string ToString() => $"Address: {Address}\nFunction: {Function}\nName: {Name}\nPoll interval: {PollInterval}\nMultiplier: {Multiplier}\n";
 }
 
-public struct RegisterData
+public record RegisterData
 {
     public string Name;
     public string Value;
@@ -33,7 +35,7 @@ public struct RegisterData
         Timestamp = DateTime.Now;
     }
 
-    public readonly override string ToString() => $"Name: {Name}\nValue: {Value}\nTimestamp: {Timestamp}\n";
+    public override string ToString() => $"Name: {Name}\nValue: {Value}\nTimestamp: {Timestamp}\n";
 }
 
 public sealed class MachineParameters
@@ -48,7 +50,10 @@ public sealed class MachineParameters
         Version = version;
         IRegisterInfoProvider modelParametersProvider = new SQLRegisterInfoProvider(Series, Version);
         Parameters = new List<RegisterInfo>();
-        Parameters.AddRange(modelParametersProvider.GetParameters());
+        Parameters = modelParametersProvider.GetParameters()
+                                            .GroupBy(p => p.Name)
+                                            .Select(g => g.FirstOrDefault(p => p.Version == Version) ?? g.First(p => p.Version == 0))
+                                            .ToList();
     }
 
     public override string ToString()
@@ -57,11 +62,9 @@ public sealed class MachineParameters
         result.AppendLine($"Model: {Series}");
         foreach (var parameter in Parameters)
         {
-            result.AppendLine($"Address: {parameter.Address}");
-            result.AppendLine($"Name: {parameter.Name}");
-            result.AppendLine($"Poll interval: {parameter.PollInterval}");
-            result.AppendLine();
+            result.AppendLine(parameter.ToString());
         }
+        result.AppendLine();
         return result.ToString();
     }
 }
@@ -91,11 +94,9 @@ public sealed class MachineData
         result.AppendLine($"Step name: {stepName}");
         foreach (var data in Data)
         {
-            result.AppendLine($"Name: {data.Name}");
-            result.AppendLine($"Value: {data.Value}");
-            result.AppendLine($"Timestamp: {data.Timestamp}");
-            result.AppendLine();
+            result.AppendLine(data.ToString());
         }
+        result.AppendLine();
         return result.ToString();
     }
 }
