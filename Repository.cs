@@ -119,7 +119,7 @@ public sealed class OpenTSDBRepository : IRepository
         {
             await conn.OpenAsync(_token);
 
-            int.TryParse(data.Data.Where(x => x.Name == "Ошибки").FirstOrDefault()?.Value, out int errorCode);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Ошибки")?.Value, out int errorCode);
             if (errorCode != 0)
             {
                 await using (var cmd = new NpgsqlCommand("""
@@ -128,13 +128,13 @@ public sealed class OpenTSDBRepository : IRepository
                 {
                     cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
                     cmd.Parameters.AddWithValue("Error", errorCode);
-                    cmd.Parameters.AddWithValue("Cycle", int.Parse(data.Data.Where(x => x.Name == "Цикл стирки").FirstOrDefault()?.Value ?? "0"));
+                    cmd.Parameters.AddWithValue("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Name == "Цикл стирки")?.Value ?? "0"));
                     cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
                     await cmd.ExecuteNonQueryAsync(_token);
                 }
             }
 
-            int.TryParse(data.Data.Where(x => x.Name == "Статус: Автоматич_упр").FirstOrDefault()?.Value, out int autoControl);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Value, out int autoControl);
             if (autoControl != 1) return;
 
             await using (var cmd = new NpgsqlCommand("""
@@ -156,11 +156,11 @@ public sealed class OpenTSDBRepository : IRepository
                 await cmd.ExecuteNonQueryAsync(_token);
             }
 
-            int.TryParse(data.Data.Where(x => x.Name == "Цикл стирки").FirstOrDefault()?.Value, out int wash_cycle);
-            int.TryParse(data.Data.Where(x => x.Name == "Наработка часы").FirstOrDefault()?.Value, out int all_operating_time);
-            int.TryParse(data.Data.Where(x => x.Name == "Расход воды всего").FirstOrDefault()?.Value, out int all_water_consumption);
-            double.TryParse(data.Data.Where(x => x.Name == "Взвешенное бельё").FirstOrDefault()?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
-            int.TryParse(data.Data.Where(x => x.Name == "Время работы программы минуты").FirstOrDefault()?.Value, out int cur_program_time);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Цикл стирки")?.Value, out int wash_cycle);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Наработка часы")?.Value, out int all_operating_time);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Расход воды всего")?.Value, out int all_water_consumption);
+            _ = double.TryParse(data.Data.FirstOrDefault(x => x.Name == "Взвешенное бельё")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Время работы программы минуты")?.Value, out int cur_program_time);
             await using (var cmd = new NpgsqlCommand("""
                 INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at)
                 VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp)
