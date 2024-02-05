@@ -39,12 +39,14 @@ public struct RegisterData
 public sealed class MachineParameters
 {
     public int Series;
+    public int Version;
     public List<RegisterInfo> Parameters;
 
-    public MachineParameters(int series)
+    public MachineParameters(int series, int version = 0)
     {
         Series = series;
-        IRegisterInfoProvider modelParametersProvider = new SQLRegisterInfoProvider(Series);
+        Version = version;
+        IRegisterInfoProvider modelParametersProvider = new SQLRegisterInfoProvider(Series, Version);
         Parameters = new List<RegisterInfo>();
         Parameters.AddRange(modelParametersProvider.GetParameters());
     }

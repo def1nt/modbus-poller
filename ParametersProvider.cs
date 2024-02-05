@@ -11,11 +11,13 @@ public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
 {
     private readonly string connectionString;
     private readonly int seriesId;
+    private readonly int version;
 
-    public SQLRegisterInfoProvider(int seriesId)
+    public SQLRegisterInfoProvider(int seriesId, int version = 0)
     {
         this.connectionString = AppSettings.PostgresConnectionString;
         this.seriesId = seriesId;
+        this.version = version;
     }
 
     public IEnumerable<RegisterInfo> GetParameters()
