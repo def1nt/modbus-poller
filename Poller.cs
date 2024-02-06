@@ -33,7 +33,7 @@ public sealed class Poller
             await AuthenticateDevice();
             Console.WriteLine($"{DateTime.Now} - Client from {_tcpClient.Client.RemoteEndPoint} authenticated as {_deviceInfo!.DeviceName} with ID {_deviceInfo.DeviceID}");
             if (_deviceInfo!.Active == false) await InfiniteLoop();
-            machineParameters = new(_deviceInfo!.SeriesID); // stub, use real ID later
+            machineParameters = new(_deviceInfo!.SeriesID, _deviceInfo.PLCVersion);
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();
@@ -80,9 +80,7 @@ public sealed class Poller
         {
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
-                if (response.ExceptionCode != 2) // TODO: Remove this hack
-                    throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address}");
-                else Console.WriteLine($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address} from {machineData?.DeviceID}"); // TODO: Remove this hack
+                throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address}");
         }
         return response;
     }

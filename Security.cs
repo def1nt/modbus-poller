@@ -28,7 +28,7 @@ public static class Authenticator
         {
             throw new NpgsqlException("Could not connect to database");
         }
-        using var cmd = new NpgsqlCommand("SELECT unique_id, code, series_id, name FROM device", conn);
+        using var cmd = new NpgsqlCommand("SELECT unique_id, code, series_id, name, active FROM device", conn);
         using var reader = cmd.ExecuteReader();
 
         while (reader.Read())
@@ -37,7 +37,8 @@ public static class Authenticator
             var code = reader.GetInt32(1);
             var seriesID = reader.GetInt32(2);
             var name = reader.GetString(3);
-            yield return new DeviceInfo(deviceID, code, seriesID, 0, name, true);
+            var active = reader.IsDBNull(4) || reader.GetBoolean(4);
+            yield return new DeviceInfo(deviceID, code, seriesID, 0, name, active);
         }
     }
 }

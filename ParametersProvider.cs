@@ -24,7 +24,7 @@ public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
     {
         using var connection = new NpgsqlConnection(connectionString);
         connection.Open();
-        using var command = new NpgsqlCommand($"SELECT address, read_function, interval, multiplier, name FROM public.series_params WHERE series_id = {seriesId} AND poll = true", connection);
+        using var command = new NpgsqlCommand($"SELECT address, read_function, interval, multiplier, name, version FROM public.series_params WHERE series_id = {seriesId} AND poll = true", connection);
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -34,7 +34,8 @@ public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
                 Function = reader.GetByte(1),
                 PollInterval = reader.IsDBNull(2) ? 0 : (uint)reader.GetInt32(2),
                 Multiplier = reader.GetDouble(3),
-                Name = reader.GetString(4)
+                Name = reader.GetString(4),
+                Version = reader.IsDBNull(5) ? 0 : reader.GetInt32(5)
             };
         }
     }
