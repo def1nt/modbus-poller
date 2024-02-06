@@ -144,15 +144,16 @@ public sealed class OpenTSDBRepository : IRepository
                 cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
                 await cmd.ExecuteNonQueryAsync(_token);
             }
-
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Текущая программа")?.Value, out int currentProgramID);
             await using (var cmd = new NpgsqlCommand("""
-                INSERT INTO device_cp (unique_id, program_name, step_name, added_at) VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp)
+                INSERT INTO device_cp (unique_id, program_name, step_name, added_at, program_id) VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp, @currentProgramID)
                 """, conn))
             {
                 cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
                 cmd.Parameters.AddWithValue("ProgramName", data.programName);
                 cmd.Parameters.AddWithValue("StepName", data.stepName);
                 cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
+                cmd.Parameters.AddWithValue("currentProgramID", currentProgramID);
                 await cmd.ExecuteNonQueryAsync(_token);
             }
 
@@ -162,8 +163,8 @@ public sealed class OpenTSDBRepository : IRepository
             _ = double.TryParse(data.Data.FirstOrDefault(x => x.Name == "Взвешенное бельё")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Время работы программы минуты")?.Value, out int cur_program_time);
             await using (var cmd = new NpgsqlCommand("""
-                INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at)
-                VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp)
+                INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at, cur_program_id)
+                VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp, @currentProgramID)
                 """, conn))
             {
                 cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
@@ -174,6 +175,7 @@ public sealed class OpenTSDBRepository : IRepository
                 cmd.Parameters.AddWithValue("CurWeight", (int)(cur_weight * 10));
                 cmd.Parameters.AddWithValue("CurProgramTime", cur_program_time);
                 cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
+                cmd.Parameters.AddWithValue("currentProgramID", currentProgramID);
                 await cmd.ExecuteNonQueryAsync(_token);
             }
         }
