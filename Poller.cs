@@ -79,8 +79,8 @@ public sealed class Poller
         if (bytesRead != 0)
         {
             response.SetData(buffer.Take(bytesRead).ToArray());
-            if (response.ExceptionCode != 0)
-                throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address}");
+            // if (response.ExceptionCode != 0)
+            //     throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address}");\
         }
         return response;
     }
@@ -142,6 +142,30 @@ public sealed class Poller
         machineData.programName = await GetString(ProgramNameLocation, 16);
         machineData.stepName = await GetString(StepNameLocation, 8);
         await LogCounters();
+
+        // TODO: crutch, remove later
+        // set Статус: Автоматич_упр to 1 in any case
+        if (_deviceInfo.DeviceID == 267735462)
+        {
+            if (machineData.Data.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр") is null)
+            {
+                machineData.Data.Add(new RegisterData
+                {
+                    Timestamp = DateTime.Now,
+                    Name = "Статус: Автоматич_упр",
+                    Value = "1"
+                });
+            } else
+            {
+                machineData.Data[machineData.Data.FindIndex(x => x.Name == "Статус: Автоматич_упр")] = new RegisterData
+                {
+                    Timestamp = DateTime.Now,
+                    Name = "Статус: Автоматич_упр",
+                    Value = "1"
+                };
+            }
+        }
+
         if (retries < maxRetries) retries += 1;
         return machineData;
     }
@@ -191,6 +215,7 @@ public sealed class Poller
         await DebugLog(0x1B69, 1, "запусков");
         await DebugLog(0x04BC, 1, "шаг");
         await DebugLog(0x2A8, 1, "килограмм");
+        await DebugLog(0x20A, 1, "номер программы");
 
         Console.WriteLine();
     }
