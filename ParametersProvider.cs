@@ -1,5 +1,3 @@
-using System.Globalization;
-using Npgsql;
 using System.Text.Json;
 
 public interface IRegisterInfoProvider
@@ -9,23 +7,18 @@ public interface IRegisterInfoProvider
 
 public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
 {
-    private readonly string connectionString;
     private readonly int seriesId;
     private readonly int version;
 
     public SQLRegisterInfoProvider(int seriesId, int version = 0)
     {
-        this.connectionString = AppSettings.PostgresConnectionString;
         this.seriesId = seriesId;
         this.version = version;
     }
 
     public IEnumerable<RegisterInfo> GetParameters()
     {
-        using var connection = new NpgsqlConnection(connectionString);
-        connection.Open();
-        using var command = new NpgsqlCommand($"SELECT address, read_function, interval, multiplier, name, version FROM public.series_params WHERE series_id = {seriesId} AND poll = true", connection);
-        using var reader = command.ExecuteReader();
+        using var reader = DatabaseService.GetDataReader($"SELECT address, read_function, interval, multiplier, name, version FROM public.series_params WHERE series_id = {seriesId} AND poll = true");
         while (reader.Read())
         {
             yield return new RegisterInfo

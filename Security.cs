@@ -1,8 +1,5 @@
 // TODO: Everything in this file will change
 
-using System.Data;
-using Npgsql;
-
 namespace Security;
 
 public static class Authenticator
@@ -22,14 +19,7 @@ public static class Authenticator
 
     private static IEnumerable<DeviceInfo> GetDeviceList()
     {
-        using var conn = new NpgsqlConnection(AppSettings.PostgresConnectionString);
-        conn.Open();
-        if (conn.State != ConnectionState.Open)
-        {
-            throw new NpgsqlException("Could not connect to database");
-        }
-        using var cmd = new NpgsqlCommand("SELECT unique_id, code, series_id, name, active FROM device", conn);
-        using var reader = cmd.ExecuteReader();
+        var reader = DatabaseService.GetDataReader("SELECT unique_id, code, series_id, name, active FROM device");
 
         while (reader.Read())
         {
