@@ -97,6 +97,7 @@ public sealed class Poller
         var id = response.Data[1];
         var secret = response.Data[2];
         var plcversion = response.Data[3];
+        await DebugLog(IDLocation, 4, "series", "id", "secret", "plcversion");
         // combining series and id into one 32-bit integer for device id
         var deviceID = (uint)series << 16 | id;
         if ((_deviceInfo = Authenticator.AuthenticateDevice(deviceID, secret)) is null)
@@ -191,6 +192,11 @@ public sealed class Poller
         await DebugLog(0x1B69, 1, "запусков");
         await DebugLog(0x04BC, 1, "шаг");
         await DebugLog(0x2A8, 1, "килограмм");
+        await DebugLog(0x20A, 1, "номер программы");
+        var status = machineData?.Data.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Value;
+        var addr = machineParameters?.Parameters.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Address;
+        var func = machineParameters?.Parameters.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Function;
+        Console.WriteLine($"{machineData?.DeviceID + ": "}{addr} with {func}: {status} режим работы");
 
         Console.WriteLine();
     }
