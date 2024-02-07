@@ -114,80 +114,65 @@ public sealed class OpenTSDBRepository : IRepository
             }
         }
 
-        await using var conn = new NpgsqlConnection(AppSettings.PostgresConnectionString);
         try
         {
-            await conn.OpenAsync(_token);
-
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Ошибки")?.Value, out int errorCode);
             if (errorCode != 0)
             {
-                await using (var cmd = new NpgsqlCommand("""
+                await DatabaseService.ExecuteNonQuery("""
                 INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at) VALUES (@DeviceID, @Error, @Cycle, @Timestamp)
-                """, conn))
-                {
-                    cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
-                    cmd.Parameters.AddWithValue("Error", errorCode);
-                    cmd.Parameters.AddWithValue("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Name == "Цикл стирки")?.Value ?? "0"));
-                    cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
-                    await cmd.ExecuteNonQueryAsync(_token);
-                }
+                """,
+                    ("DeviceID", (long)data.DeviceID),
+                    ("Error", errorCode),
+                    ("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Name == "Цикл стирки")?.Value ?? "0")),
+                    ("Timestamp", DateTime.UtcNow)
+                );
             }
 
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Value, out int autoControl);
             if (autoControl != 1) return;
 
-            await using (var cmd = new NpgsqlCommand("""
-                DELETE FROM device_cp WHERE unique_id = @DeviceID
-                """, conn))
-            {
-                cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
-                await cmd.ExecuteNonQueryAsync(_token);
-            }
+            await DatabaseService.ExecuteNonQuery("DELETE FROM device_cp WHERE unique_id = @DeviceID",
+                ("DeviceID", (long)data.DeviceID)
+            );
+
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Текущая программа")?.Value, out int currentProgramID);
-            await using (var cmd = new NpgsqlCommand("""
-                INSERT INTO device_cp (unique_id, program_name, step_name, added_at, program_id) VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp, @currentProgramID)
-                """, conn))
-            {
-                cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
-                cmd.Parameters.AddWithValue("ProgramName", data.programName);
-                cmd.Parameters.AddWithValue("StepName", data.stepName);
-                cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
-                cmd.Parameters.AddWithValue("currentProgramID", currentProgramID);
-                await cmd.ExecuteNonQueryAsync(_token);
-            }
+            await DatabaseService.ExecuteNonQuery("""
+            INSERT INTO device_cp (unique_id, program_name, step_name, added_at, program_id)
+            VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp, @currentProgramID)
+            """,
+                ("DeviceID", (long)data.DeviceID),
+                ("ProgramName", data.programName),
+                ("StepName", data.stepName),
+                ("Timestamp", DateTime.UtcNow),
+                ("currentProgramID", currentProgramID)
+            );
 
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Цикл стирки")?.Value, out int wash_cycle);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Наработка часы")?.Value, out int all_operating_time);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Расход воды всего")?.Value, out int all_water_consumption);
             _ = double.TryParse(data.Data.FirstOrDefault(x => x.Name == "Взвешенное бельё")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Время работы программы минуты")?.Value, out int cur_program_time);
-            await using (var cmd = new NpgsqlCommand("""
-                INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at, cur_program_id)
-                VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp, @currentProgramID)
-                """, conn))
-            {
-                cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
-                cmd.Parameters.AddWithValue("WashCycle", wash_cycle);
-                cmd.Parameters.AddWithValue("AllOperatingTime", all_operating_time);
-                cmd.Parameters.AddWithValue("AllWaterConsumption", all_water_consumption);
-                cmd.Parameters.AddWithValue("ProgramName", data.programName);
-                cmd.Parameters.AddWithValue("CurWeight", (int)(cur_weight * 10));
-                cmd.Parameters.AddWithValue("CurProgramTime", cur_program_time);
-                cmd.Parameters.AddWithValue("Timestamp", DateTime.UtcNow);
-                cmd.Parameters.AddWithValue("currentProgramID", currentProgramID);
-                await cmd.ExecuteNonQueryAsync(_token);
-            }
+            await DatabaseService.ExecuteNonQuery("""
+            INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at, cur_program_id)
+            VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp, @currentProgramID)
+            """,
+                ("DeviceID", (long)data.DeviceID),
+                ("WashCycle", wash_cycle),
+                ("AllOperatingTime", all_operating_time),
+                ("AllWaterConsumption", all_water_consumption),
+                ("ProgramName", data.programName),
+                ("CurWeight", (int)(cur_weight * 10)),
+                ("CurProgramTime", cur_program_time),
+                ("Timestamp", DateTime.UtcNow),
+                ("currentProgramID", currentProgramID)
+            );
         }
         catch (Exception e)
         {
             Console.WriteLine("Error saving data to database: " + e.Message);
             if (Environment.GetEnvironmentVariable("DEBUG") is not null)
                 Console.WriteLine($"Trace: {e.StackTrace}");
-        }
-        finally
-        {
-            await conn.CloseAsync();
         }
     }
 
