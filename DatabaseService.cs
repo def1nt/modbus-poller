@@ -1,33 +1,40 @@
 using Npgsql;
 using System.Data;
 
-public class DatabaseService
+public static class DatabaseService
 {
-    private readonly string _connectionString;
-    private readonly NpgsqlConnection _connection;
-    private static DatabaseService? _instance;
+    private static readonly string _connectionString;
 
-    private DatabaseService(string connectionString)
+    static DatabaseService()
     {
-        _connectionString = connectionString;
-        _instance = this;
-        _connection = new NpgsqlConnection(_connectionString);
+        _connectionString = AppSettings.PostgresConnectionString;
     }
 
-    public static DatabaseService GetInstance()
+    public static NpgsqlDataReader GetDataReader(string query)
     {
-        _instance ??= new DatabaseService(AppSettings.PostgresConnectionString);
-        return _instance;
-    }
-
-    public NpgsqlDataReader GetDataReader(string query)
-    {
-        if (_connection.State != ConnectionState.Open) _connection.Open();
-        if (_connection.State != ConnectionState.Open)
+        var connection = new NpgsqlConnection(_connectionString); // Make sure not to use 'using' here to avoid disposing the connection
+        connection.Open();
+        if (connection.State != ConnectionState.Open)
         {
             throw new NpgsqlException("Could not connect to database");
         }
-        var cmd = new NpgsqlCommand(query, _connection);
+        var cmd = new NpgsqlCommand(query, connection);
         return cmd.ExecuteReader();
+    }
+
+    public static Task<int> ExecuteNonQuery(string query, params (string, object)[] values)
+    {
+        using var connection = new NpgsqlConnection(_connectionString);
+        connection.Open();
+        if (connection.State != ConnectionState.Open)
+        {
+            throw new NpgsqlException("Could not connect to database");
+        }
+        using var cmd = new NpgsqlCommand(query, connection);
+        foreach (var (name, value) in values)
+        {
+            cmd.Parameters.AddWithValue(name, value);
+        }
+        return cmd.ExecuteNonQueryAsync();
     }
 }
