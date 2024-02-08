@@ -1,4 +1,3 @@
-using Npgsql;
 using System.Text;
 using System.Text.Json;
 
@@ -37,34 +36,24 @@ public sealed class DatabaseRepository : IRepository
 
     public async Task SaveData(MachineData data)
     {
-        await using var conn = new NpgsqlConnection(AppSettings.PostgresConnectionString);
-
         try
         {
-            await conn.OpenAsync(_token);
-
             foreach (var row in data.Data)
             {
-                await using (var cmd = new NpgsqlCommand("""
+                await DatabaseService.ExecuteNonQuery("""
                 INSERT INTO device_metrics (device_id, "Par_name", "Par_value", sended_at) VALUES (@DeviceID, @Name, @Value, @Timestamp)
-                """, conn))
-                {
-                    cmd.Parameters.AddWithValue("Name", row.Name);
-                    cmd.Parameters.AddWithValue("Value", row.Value);
-                    cmd.Parameters.AddWithValue("Timestamp", row.Timestamp);
-                    cmd.Parameters.AddWithValue("DeviceID", (long)data.DeviceID);
-                    await cmd.ExecuteNonQueryAsync(_token);
-                }
+                """,
+                    ("Name", row.Name),
+                    ("Value", row.Value),
+                    ("Timestamp", row.Timestamp),
+                    ("DeviceID", (long)data.DeviceID)
+                );
             }
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             throw;
-        }
-        finally
-        {
-            await conn.CloseAsync();
         }
     }
 }
