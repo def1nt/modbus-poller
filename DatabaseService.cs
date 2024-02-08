@@ -22,7 +22,7 @@ public static class DatabaseService
         return cmd.ExecuteReader();
     }
 
-    public static Task<int> ExecuteNonQuery(string query, params (string, object)[] values)
+    public async static Task<int> ExecuteNonQuery(string query, params (string, object)[] values)
     {
         using var connection = new NpgsqlConnection(_connectionString);
         connection.Open();
@@ -35,6 +35,6 @@ public static class DatabaseService
         {
             cmd.Parameters.AddWithValue(name, value);
         }
-        return cmd.ExecuteNonQueryAsync();
+        return await cmd.ExecuteNonQueryAsync();
     }
 }
