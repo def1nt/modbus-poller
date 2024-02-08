@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net.Sockets;
 using Security;
 using Modbus;
+using Utils;
 
 public sealed class Poller
 {
@@ -118,7 +119,7 @@ public sealed class Poller
             if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval))
                 continue;
 
-            request.SetData(1, parameter.Function, StringToUShort(parameter.Address), 1); // TODO: Implement crutch for f1 and f3 on some addresses
+            request.SetData(1, parameter.Function, StringUtils.HexStringToUShort(parameter.Address), 1); // TODO: Implement crutch for f1 and f3 on some addresses
             var response = await SendReceiveAsync(request);
             if (response.Data.Length == 0) continue;
             RegisterData registerData = new()
@@ -153,33 +154,9 @@ public sealed class Poller
         var response = await SendReceiveAsync(request);
         if (response.Data.Length == count)
         {
-            return ToUTFString(response.Data);
+            return StringUtils.ASCIIBytesToUTFString(response.Data);
         }
         return string.Empty;
-    }
-
-    private static string ToUTFString(ushort[] ushorts)
-    {
-        byte[] bytes = new byte[32];
-        string programNameString = string.Empty;
-        int length = Math.Min(ushorts.Length, 16);
-        for (int i = 0; i < length; i++) // Parsing over 16 ushorts splitting them into 2 bytes and converting them from ISO 8859-5 to utf-16 by adding 0xFEFF_0360
-        {
-            byte[] bytes_t = BitConverter.GetBytes(ushorts[i]);
-            bytes[i * 2] = bytes_t[0];
-            bytes[i * 2 + 1] = bytes_t[1];
-        }
-        for (int i = 0; i < 32; i++)
-        {
-            if (bytes[i] == 0x00) break;
-            var c = (char)bytes[i];
-            if (bytes[i] >= 0xA1 && bytes[i] <= 0xF1) // We're in a cyrillic range
-            {
-                c = (char)(c + 0xFEFF_0360);
-            }
-            programNameString += c;
-        }
-        return programNameString;
     }
 
     private async Task LogCounters() // TODO: Temporary, remove later
@@ -211,11 +188,6 @@ public sealed class Poller
         {
             Console.WriteLine($"{machineData?.DeviceID + ": "}{address + i:X2}: {response.Data[i]} {name.ElementAtOrDefault(i) ?? string.Empty}");
         }
-    }
-
-    private static ushort StringToUShort(string address)
-    {
-        return ushort.Parse(address, NumberStyles.HexNumber);
     }
 
     private Task InfiniteLoop() => Task.Run(() => { while (token.IsCancellationRequested == false) { Thread.Sleep(1000); } });
