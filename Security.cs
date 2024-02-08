@@ -19,7 +19,7 @@ public static class Authenticator
 
     private static IEnumerable<DeviceInfo> GetDeviceList()
     {
-        var reader = DatabaseService.GetDataReader("SELECT unique_id, code, series_id, name, active FROM device");
+        using var reader = DatabaseService.GetDataReader("SELECT unique_id, code, series_id, name, active FROM device");
 
         while (reader.Read())
         {
@@ -33,7 +33,7 @@ public static class Authenticator
     }
 }
 
-public record DeviceInfo(ulong DeviceID, int Code, int SeriesID, int PLCVersion, string DeviceName, bool Active); // TODO: FOR NOW UniqueID and DeviceID are the same
+public record DeviceInfo(ulong DeviceID, int Code, int SeriesID, int PLCVersion, string DeviceName, bool Active);
 
 /*
     id integer NOT NULL DEFAULT nextval('device_id_seq'::regclass),
