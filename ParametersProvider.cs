@@ -29,7 +29,7 @@ public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
                 Multiplier = reader.GetDouble(3),
                 Name = reader.GetString(4),
                 Codename = reader.GetString(5),
-                Version = reader.IsDBNull(6) ? 0 : reader.GetInt32(5)
+                Version = reader.IsDBNull(6) ? 0 : reader.GetInt32(6)
             };
         }
     }
