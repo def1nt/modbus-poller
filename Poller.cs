@@ -126,9 +126,10 @@ public sealed class Poller
             {
                 Timestamp = DateTime.Now,
                 Name = parameter.Name,
+                Codename = parameter.Codename,
                 Value = (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
             };
-            var existingDataIndex = machineData.Data.FindIndex(x => x.Name == registerData.Name);
+            var existingDataIndex = machineData.Data.FindIndex(x => x.Codename == registerData.Codename);
             if (existingDataIndex != -1)
             {
                 machineData.Data[existingDataIndex] = registerData;
@@ -170,9 +171,9 @@ public sealed class Poller
         await DebugLog(0x04BC, 1, "шаг");
         await DebugLog(0x2A8, 1, "килограмм");
         await DebugLog(0x20A, 1, "номер программы");
-        var status = machineData?.Data.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Value;
-        var addr = machineParameters?.Parameters.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Address;
-        var func = machineParameters?.Parameters.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Function;
+        var status = machineData?.Data.FirstOrDefault(x => x.Codename == "automatic_control")?.Value;
+        var addr = machineParameters?.Parameters.FirstOrDefault(x => x.Codename == "automatic_control")?.Address;
+        var func = machineParameters?.Parameters.FirstOrDefault(x => x.Codename == "automatic_control")?.Function;
         Console.WriteLine($"{machineData?.DeviceID + ": "}{addr} with {func}: {status} режим работы");
 
         Console.WriteLine();

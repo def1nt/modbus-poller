@@ -3,6 +3,7 @@ public record RegisterInfo
     public string Address;
     public byte Function;
     public string Name;
+    public string Codename;
     public uint PollInterval;
     public DateTime LastPoll;
     public double Multiplier;
@@ -13,6 +14,7 @@ public record RegisterInfo
         Address = "";
         Function = 3;
         Name = "";
+        Codename = "";
         PollInterval = 0;
         LastPoll = DateTime.MinValue;
         Multiplier = 1.0;
@@ -25,12 +27,14 @@ public record RegisterInfo
 public record RegisterData
 {
     public string Name;
+    public string Codename;
     public string Value;
     public DateTime Timestamp;
 
     public RegisterData()
     {
         Name = "";
+        Codename = "";
         Value = "";
         Timestamp = DateTime.Now;
     }
@@ -51,7 +55,7 @@ public sealed class MachineParameters
         IRegisterInfoProvider modelParametersProvider = new SQLRegisterInfoProvider(Series, Version);
         Parameters = new List<RegisterInfo>();
         Parameters = modelParametersProvider.GetParameters()
-                                            .GroupBy(p => p.Name)
+                                            .GroupBy(p => p.Codename)
                                             .Select(g => g.FirstOrDefault(p => p.Version == Version) ?? g.First(p => p.Version == 0))
                                             .ToList();
     }

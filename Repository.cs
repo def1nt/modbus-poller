@@ -105,7 +105,7 @@ public sealed class OpenTSDBRepository : IRepository
 
         try
         {
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Ошибки")?.Value, out int errorCode);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "errors")?.Value, out int errorCode);
             if (errorCode != 0)
             {
                 await DatabaseService.ExecuteNonQuery("""
@@ -113,19 +113,19 @@ public sealed class OpenTSDBRepository : IRepository
                 """,
                     ("DeviceID", (long)data.DeviceID),
                     ("Error", errorCode),
-                    ("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Name == "Цикл стирки")?.Value ?? "0")),
+                    ("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Codename == "wash_cycles")?.Value ?? "0")),
                     ("Timestamp", DateTime.UtcNow)
                 );
             }
 
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Статус: Автоматич_упр")?.Value, out int autoControl);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "automatic_control")?.Value, out int autoControl);
             if (autoControl != 1) return;
 
             await DatabaseService.ExecuteNonQuery("DELETE FROM device_cp WHERE unique_id = @DeviceID",
                 ("DeviceID", (long)data.DeviceID)
             );
 
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Текущая программа")?.Value, out int currentProgramID);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "current_program")?.Value, out int currentProgramID);
             await DatabaseService.ExecuteNonQuery("""
             INSERT INTO device_cp (unique_id, program_name, step_name, added_at, program_id)
             VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp, @currentProgramID)
@@ -137,11 +137,11 @@ public sealed class OpenTSDBRepository : IRepository
                 ("currentProgramID", currentProgramID)
             );
 
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Цикл стирки")?.Value, out int wash_cycle);
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Наработка часы")?.Value, out int all_operating_time);
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Расход воды всего")?.Value, out int all_water_consumption);
-            _ = double.TryParse(data.Data.FirstOrDefault(x => x.Name == "Взвешенное бельё")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Name == "Время работы программы минуты")?.Value, out int cur_program_time);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "wash_cycles")?.Value, out int wash_cycle);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value, out int all_operating_time);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "water_spent_total")?.Value, out int all_water_consumption);
+            _ = double.TryParse(data.Data.FirstOrDefault(x => x.Codename == "weight")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_time_minutes")?.Value, out int cur_program_time);
             await DatabaseService.ExecuteNonQuery("""
             INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at, cur_program_id)
             VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp, @currentProgramID)
