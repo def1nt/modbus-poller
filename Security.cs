@@ -1,12 +1,9 @@
-// TODO: Everything in this file will change
-
 namespace Security;
 
 public static class Authenticator
 {
     public static DeviceInfo? AuthenticateDevice(ulong deviceID, ushort secret)
     {
-        if (deviceID == 65537) deviceID = 777777777777; // TODO: Remove this stub
         foreach (var device in GetDeviceList())
         {
             if (device.DeviceID == deviceID && device.Code == secret)
@@ -34,14 +31,3 @@ public static class Authenticator
 }
 
 public record DeviceInfo(ulong DeviceID, int Code, int SeriesID, int PLCVersion, string DeviceName, bool Active);
-
-/*
-    id integer NOT NULL DEFAULT nextval('device_id_seq'::regclass),
-    name character varying COLLATE pg_catalog."default" NOT NULL,
-    series_id integer,
-    "number" character varying COLLATE pg_catalog."default" NOT NULL,
-    code character varying COLLATE pg_catalog."default" NOT NULL,
-    added_at timestamp without time zone,
-    location json,
-    unique_id bigint NOT NULL,
-*/

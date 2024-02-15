@@ -119,7 +119,7 @@ public sealed class Poller
             if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval))
                 continue;
 
-            request.SetData(1, parameter.Function, StringUtils.HexStringToUShort(parameter.Address), 1); // TODO: Implement crutch for f1 and f3 on some addresses
+            request.SetData(1, parameter.Function, StringUtils.HexStringToUShort(parameter.Address), 1);
             var response = await SendReceiveAsync(request);
             if (response.Data.Length == 0) continue;
             RegisterData registerData = new()
@@ -167,14 +167,8 @@ public sealed class Poller
         Console.WriteLine(machineData?.DeviceID + ": " + machineData?.stepName);
         Console.WriteLine();
 
-        await DebugLog(0x1B69, 1, "запусков");
         await DebugLog(0x04BC, 1, "шаг");
-        await DebugLog(0x2A8, 1, "килограмм");
         await DebugLog(0x20A, 1, "номер программы");
-        var status = machineData?.Data.FirstOrDefault(x => x.Codename == "automatic_control")?.Value;
-        var addr = machineParameters?.Parameters.FirstOrDefault(x => x.Codename == "automatic_control")?.Address;
-        var func = machineParameters?.Parameters.FirstOrDefault(x => x.Codename == "automatic_control")?.Function;
-        Console.WriteLine($"{machineData?.DeviceID + ": "}{addr} with {func}: {status} режим работы");
 
         Console.WriteLine();
     }
@@ -191,5 +185,5 @@ public sealed class Poller
         }
     }
 
-    private Task InfiniteLoop() => Task.Run(() => { while (token.IsCancellationRequested == false) { Thread.Sleep(1000); } });
+    private Task InfiniteLoop() => Task.Run(async () => { while (token.IsCancellationRequested == false) { await Task.Delay(1000); } });
 }
