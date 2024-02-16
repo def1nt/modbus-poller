@@ -22,7 +22,7 @@ public sealed class Poller
     public Poller(TcpClient tcpClient, CancellationToken token = default)
     {
         this.token = token;
-        _repository = RepositoryFactory.GetRepository("opentsdb");
+        _repository = RepositoryFactory.GetRepository(IRepository.RepositoryType.Database);
         _tcpClient = tcpClient;
         _stream = _tcpClient.GetStream();
     }

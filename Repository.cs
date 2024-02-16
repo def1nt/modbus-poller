@@ -4,6 +4,12 @@ using System.Text.Json;
 public interface IRepository
 {
     public Task SaveData(MachineData data);
+    enum RepositoryType
+    {
+        File,
+        Database,
+        Console
+    }
 }
 
 sealed public class FileRepository : IRepository
@@ -26,38 +32,6 @@ sealed public class FileRepository : IRepository
     }
 }
 
-public sealed class DatabaseRepository : IRepository
-{
-    private readonly CancellationToken _token;
-    public DatabaseRepository(CancellationToken token = default)
-    {
-        _token = token;
-    }
-
-    public async Task SaveData(MachineData data)
-    {
-        try
-        {
-            foreach (var row in data.Data)
-            {
-                await DatabaseService.ExecuteNonQuery("""
-                INSERT INTO device_metrics (device_id, "Par_name", "Par_value", sended_at) VALUES (@DeviceID, @Name, @Value, @Timestamp)
-                """,
-                    ("Name", row.Name),
-                    ("Value", row.Value),
-                    ("Timestamp", row.Timestamp),
-                    ("DeviceID", (long)data.DeviceID)
-                );
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-    }
-}
-
 public sealed class ConsoleRepository : IRepository
 {
     public async Task SaveData(MachineData data)
@@ -66,11 +40,11 @@ public sealed class ConsoleRepository : IRepository
     }
 }
 
-public sealed class OpenTSDBRepository : IRepository
+public sealed class DatabaseRepository : IRepository
 {
     private readonly CancellationToken _token;
     private Data _data;
-    public OpenTSDBRepository(CancellationToken token = default)
+    public DatabaseRepository(CancellationToken token = default)
     {
         _token = token;
     }
@@ -176,14 +150,13 @@ public sealed class OpenTSDBRepository : IRepository
 
 public static class RepositoryFactory
 {
-    public static IRepository GetRepository(string repositoryType)
+    public static IRepository GetRepository(IRepository.RepositoryType repositoryType)
     {
         return repositoryType switch
         {
-            "file" => new FileRepository(),
-            "database" => new DatabaseRepository(),
-            "opentsdb" => new OpenTSDBRepository(),
-            "console" => new ConsoleRepository(),
+            IRepository.RepositoryType.File => new FileRepository(),
+            IRepository.RepositoryType.Database => new DatabaseRepository(),
+            IRepository.RepositoryType.Console => new ConsoleRepository(),
             _ => throw new ArgumentException("Invalid repository type.")
         };
     }
