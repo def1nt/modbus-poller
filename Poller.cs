@@ -118,8 +118,8 @@ public sealed class Poller
             var parameter = machineParameters.Parameters[i];
             if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval))
                 continue;
-
-            request.SetData(1, parameter.Function, StringUtils.HexStringToUShort(parameter.Address), 1);
+            var (type, length) = StringUtils.DecodeTypeFromString(parameter.Type);
+            request.SetData(1, parameter.Function, StringUtils.HexStringToUShort(parameter.Address), (ushort)length);
             var response = await SendReceiveAsync(request);
             if (response.Data.Length == 0) continue;
             RegisterData registerData = new()
@@ -127,7 +127,16 @@ public sealed class Poller
                 Timestamp = DateTime.Now,
                 Name = parameter.Name,
                 Codename = parameter.Codename,
-                Value = (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                Value = type switch
+                {
+                    Type t when t == typeof(ushort) => (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(short) => (((short)response.Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(uint) => (RegisterUtils.CombineRegisters(response.Data[0], response.Data[1]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(response.Data[0], response.Data[1])) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(bool) => (response.Data[0] == 1).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(string) => StringUtils.ASCIIBytesToUTFString(response.Data),
+                    _ => (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US"))
+                }
             };
             var existingDataIndex = machineData.Data.FindIndex(x => x.Codename == registerData.Codename);
             if (existingDataIndex != -1)
