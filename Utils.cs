@@ -32,4 +32,36 @@ public static class StringUtils
         }
         return programNameString;
     }
+
+    public static (Type type, int length) DecodeTypeFromString(string type)
+    {
+        if (type.Contains("string")) return (typeof(string), int.Parse(type.Split('[')[1].Split(']')[0]));
+        return type switch
+        {
+            "uint16" => (typeof(ushort), 1),
+            "int16" => (typeof(short), 1),
+            "uint32" => (typeof(uint), 2),
+            "int32" => (typeof(int), 2),
+            "bool" => (typeof(bool), 1),
+            _ => (typeof(ushort), 1)
+        };
+    }
+}
+
+public static class RegisterUtils
+{
+    public static uint CombineRegisters(ushort high, ushort low)
+    {
+        return (uint)(high << 16 | low);
+    }
+
+    public static ulong CombineRegisters(ushort[] registers, int length = 2)
+    {
+        ulong result = 0;
+        for (int i = 0; i < length; i++)
+        {
+            result |= (ulong)registers[i] << (16 * i);
+        }
+        return result;
+    }
 }
