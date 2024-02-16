@@ -8,6 +8,7 @@ public record RegisterInfo
     public DateTime LastPoll;
     public double Multiplier;
     public int Version;
+    public string Type;
 
     public RegisterInfo()
     {
@@ -19,6 +20,7 @@ public record RegisterInfo
         LastPoll = DateTime.MinValue;
         Multiplier = 1.0;
         Version = 0;
+        Type = "uint16";
     }
 
     public override string ToString() => $"Address: {Address}\nFunction: {Function}\nName: {Name}\nPoll interval: {PollInterval}\nMultiplier: {Multiplier}\n";

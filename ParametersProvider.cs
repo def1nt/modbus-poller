@@ -18,7 +18,7 @@ public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
 
     public IEnumerable<RegisterInfo> GetParameters()
     {
-        using var reader = DatabaseService.GetDataReader($"SELECT address, read_function, interval, multiplier, name, codename, version FROM public.series_params WHERE series_id = {seriesId} AND poll = true");
+        using var reader = DatabaseService.GetDataReader($"SELECT address, read_function, interval, multiplier, name, codename, version, device_format FROM public.series_params WHERE series_id = {seriesId} AND poll = true");
         while (reader.Read())
         {
             yield return new RegisterInfo
@@ -29,7 +29,8 @@ public sealed class SQLRegisterInfoProvider : IRegisterInfoProvider
                 Multiplier = reader.GetDouble(3),
                 Name = reader.GetString(4),
                 Codename = reader.GetString(5),
-                Version = reader.IsDBNull(6) ? 0 : reader.GetInt32(6)
+                Version = reader.IsDBNull(6) ? 0 : reader.GetInt32(6),
+                Type = reader.GetString(7)
             };
         }
     }
