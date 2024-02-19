@@ -128,11 +128,11 @@ public sealed class Poller
                 Name = parameter.Name,
                 Codename = parameter.Codename,
                 Value = type switch
-                {
+                { // Remember: word order is reversed in modbus
                     Type t when t == typeof(ushort) => (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
                     Type t when t == typeof(short) => (((short)response.Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(uint) => (RegisterUtils.CombineRegisters(response.Data[0], response.Data[1]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(response.Data[0], response.Data[1])) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(uint) => (RegisterUtils.CombineRegisters(response.Data[1], response.Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(response.Data[1], response.Data[0])) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
                     Type t when t == typeof(bool) => (response.Data[0] & 1).ToString(CultureInfo.GetCultureInfo("en-US")),
                     Type t when t == typeof(string) => StringUtils.ASCIIBytesToUTFString(response.Data),
                     _ => (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US"))
@@ -178,10 +178,6 @@ public sealed class Poller
 
         await DebugLog(0x04BC, 1, "шаг");
         await DebugLog(0x20A, 1, "номер программы");
-        await DebugLog(0x141D, 1, "наработка часы high");
-        await DebugLog(0x141E, 1, "наработка часы low");
-        await DebugLog(0x141F, 1, "наработка часы next high");
-        System.Console.WriteLine(machineData?.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value);
 
         Console.WriteLine();
     }
