@@ -178,6 +178,10 @@ public sealed class Poller
 
         await DebugLog(0x04BC, 1, "шаг");
         await DebugLog(0x20A, 1, "номер программы");
+        await DebugLog(0x141D, 1, "наработка часы high");
+        await DebugLog(0x141E, 1, "наработка часы low");
+        await DebugLog(0x141F, 1, "наработка часы next high");
+        System.Console.WriteLine(machineData?.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value);
 
         Console.WriteLine();
     }
