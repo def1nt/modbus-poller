@@ -133,7 +133,7 @@ public sealed class Poller
                     Type t when t == typeof(short) => (((short)response.Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
                     Type t when t == typeof(uint) => (RegisterUtils.CombineRegisters(response.Data[0], response.Data[1]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
                     Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(response.Data[0], response.Data[1])) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(bool) => (response.Data[0] == 1).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(bool) => (response.Data[0] & 1).ToString(CultureInfo.GetCultureInfo("en-US")),
                     Type t when t == typeof(string) => StringUtils.ASCIIBytesToUTFString(response.Data),
                     _ => (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US"))
                 }
