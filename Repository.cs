@@ -87,7 +87,7 @@ public sealed class DatabaseRepository : IRepository
                 """,
                     ("DeviceID", (long)data.DeviceID),
                     ("Error", errorCode),
-                    ("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Codename == "wash_cycles")?.Value ?? "0")),
+                    ("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value ?? "0")),
                     ("Timestamp", DateTime.UtcNow)
                 );
             }
@@ -111,7 +111,7 @@ public sealed class DatabaseRepository : IRepository
                 ("currentProgramID", currentProgramID)
             );
 
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "wash_cycles")?.Value, out int wash_cycle);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value, out int wash_cycle);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value, out int all_operating_time);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "water_spent_total")?.Value, out int all_water_consumption);
             _ = double.TryParse(data.Data.FirstOrDefault(x => x.Codename == "weight")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
