@@ -66,7 +66,7 @@ public sealed class DatabaseRepository : IRepository
         foreach (var row in data.Data)
         {
             _data.value = row.Value;
-            _data.tags["register"] = row.Name;
+            _data.tags["register"] = row.Codename;
 
             string json = JsonSerializer.Serialize(_data);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
