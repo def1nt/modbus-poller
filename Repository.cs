@@ -92,8 +92,34 @@ public sealed class DatabaseRepository : IRepository
                 );
             }
 
+            var timePassed = new TimeSpan(
+                int.Parse(data.Data.FirstOrDefault(d => d.Codename == "program_time_hours")?.Value ?? "0"),
+                int.Parse(data.Data.FirstOrDefault(d => d.Codename == "program_time_minutes")?.Value ?? "0"),
+                int.Parse(data.Data.FirstOrDefault(d => d.Codename == "program_time_seconds")?.Value ?? "0")
+            );
+            var timeLeft = new TimeSpan(
+                int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_hours")?.Value ?? "0"),
+                int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_minutes")?.Value ?? "0"),
+                int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_seconds")?.Value ?? "0")
+            );
+            
+            int progress;
+            try
+            {
+                checked // Because division by zero is legal with double, but casting to int will overflow
+                {
+                    progress = (int)(timePassed.TotalSeconds / (timePassed.TotalSeconds + timeLeft.TotalSeconds) * 100);
+                }
+            }
+            catch (Exception e) when (e is OverflowException || e is DivideByZeroException)
+            {
+                progress = 0;
+            }
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "automatic_control")?.Value, out int autoControl);
-            if (autoControl != 1) return;
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "manual_control")?.Value, out int manualControl);
+            Console.WriteLine($"Auto: {autoControl}, Manual: {manualControl}");
+
+            var status = autoControl == 1 ? "auto" : manualControl == 1 ? "manual" : "unknown";
 
             await DatabaseService.ExecuteNonQuery("DELETE FROM device_cp WHERE unique_id = @DeviceID",
                 ("DeviceID", (long)data.DeviceID)
@@ -101,35 +127,37 @@ public sealed class DatabaseRepository : IRepository
 
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "current_program")?.Value, out int currentProgramID);
             await DatabaseService.ExecuteNonQuery("""
-            INSERT INTO device_cp (unique_id, program_name, step_name, added_at, program_id)
-            VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp, @currentProgramID)
+            INSERT INTO device_cp (unique_id, program_name, step_name, added_at, program_id, progress, device_status)
+            VALUES (@DeviceID, @ProgramName, @StepName, @Timestamp, @currentProgramID, @progress, @status)
             """,
                 ("DeviceID", (long)data.DeviceID),
                 ("ProgramName", data.programName),
                 ("StepName", data.stepName),
                 ("Timestamp", DateTime.UtcNow),
-                ("currentProgramID", currentProgramID)
+                ("currentProgramID", currentProgramID),
+                ("progress", progress),
+                ("status", status)
             );
 
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value, out int wash_cycle);
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value, out int all_operating_time);
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "water_spent_total")?.Value, out int all_water_consumption);
-            _ = double.TryParse(data.Data.FirstOrDefault(x => x.Codename == "weight")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_time_minutes")?.Value, out int cur_program_time);
-            await DatabaseService.ExecuteNonQuery("""
-            INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at, cur_program_id)
-            VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp, @currentProgramID)
-            """,
-                ("DeviceID", (long)data.DeviceID),
-                ("WashCycle", wash_cycle),
-                ("AllOperatingTime", all_operating_time),
-                ("AllWaterConsumption", all_water_consumption),
-                ("ProgramName", data.programName),
-                ("CurWeight", (int)(cur_weight * 10)),
-                ("CurProgramTime", cur_program_time),
-                ("Timestamp", DateTime.UtcNow),
-                ("currentProgramID", currentProgramID)
-            );
+            // _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value, out int wash_cycle);
+            // _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value, out int all_operating_time);
+            // _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "water_spent_total")?.Value, out int all_water_consumption);
+            // _ = double.TryParse(data.Data.FirstOrDefault(x => x.Codename == "weight")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
+            // _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_time_minutes")?.Value, out int cur_program_time);
+            // await DatabaseService.ExecuteNonQuery("""
+            // INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at, cur_program_id)
+            // VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp, @currentProgramID)
+            // """,
+            //     ("DeviceID", (long)data.DeviceID),
+            //     ("WashCycle", wash_cycle),
+            //     ("AllOperatingTime", all_operating_time),
+            //     ("AllWaterConsumption", all_water_consumption),
+            //     ("ProgramName", data.programName),
+            //     ("CurWeight", (int)(cur_weight * 10)),
+            //     ("CurProgramTime", cur_program_time),
+            //     ("Timestamp", DateTime.UtcNow),
+            //     ("currentProgramID", currentProgramID)
+            // );
         }
         catch (Exception e)
         {
