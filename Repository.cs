@@ -161,9 +161,7 @@ public sealed class DatabaseRepository : IRepository
         }
         catch (Exception e)
         {
-            Console.WriteLine("Error saving data to database: " + e.Message);
-            if (Environment.GetEnvironmentVariable("DEBUG") is not null)
-                Console.WriteLine($"Trace: {e.StackTrace}");
+            Utils.LogUtils.LogException(e, "Error saving data to database");
         }
     }
 

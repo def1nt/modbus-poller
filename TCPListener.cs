@@ -63,9 +63,7 @@ public sealed class TCPServer : ITCPListener // TODO: Rename
         }
         catch (Exception e)
         {
-            Console.WriteLine($"HandleClientAsync() {e.GetType()} exception: {e.Message}");
-            if (Environment.GetEnvironmentVariable("DEBUG") is not null)
-                Console.WriteLine($"Trace: {e.StackTrace}");
+            Utils.LogUtils.LogException(e, $"HandleClientAsync() {e.GetType()} from {remoteEndPoint}");
         }
         finally
         {

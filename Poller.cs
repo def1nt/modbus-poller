@@ -44,9 +44,7 @@ public sealed class Poller
         }
         catch (Exception e)
         {
-            Console.WriteLine($"{DateTime.Now} - Poller.RunAsync() {e.GetType()} exception: {e.Message} from {machineData?.DeviceID}");
-            if (Environment.GetEnvironmentVariable("DEBUG") is not null)
-                Console.WriteLine($"Trace: {e.StackTrace}");
+            LogUtils.LogException(e, $"Poller.RunAsync() {e.GetType()} from {machineData?.DeviceID}");
         }
         finally
         {
