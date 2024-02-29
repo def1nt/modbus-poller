@@ -102,6 +102,7 @@ public sealed class DatabaseRepository : IRepository
                 int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_minutes")?.Value ?? "0"),
                 int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_seconds")?.Value ?? "0")
             );
+            Console.WriteLine($"Time passed: {timePassed},\nTime left: {timeLeft}");
             
             int progress;
             try
@@ -117,9 +118,8 @@ public sealed class DatabaseRepository : IRepository
             }
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "automatic_control")?.Value, out int autoControl);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "manual_control")?.Value, out int manualControl);
-            Console.WriteLine($"Auto: {autoControl}, Manual: {manualControl}");
 
-            var status = autoControl == 1 ? "auto" : manualControl == 1 ? "manual" : "unknown";
+            var status = autoControl == 1 ? "АВТОМАТИЧЕСКИЙ РЕЖИМ" : manualControl == 1 ? "РУЧНОЙ РЕЖИМ" : "БЕЗДЕЙСТВУЕТ";
 
             await DatabaseService.ExecuteNonQuery("DELETE FROM device_cp WHERE unique_id = @DeviceID",
                 ("DeviceID", (long)data.DeviceID)
