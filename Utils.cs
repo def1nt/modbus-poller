@@ -65,3 +65,13 @@ public static class RegisterUtils
         return result;
     }
 }
+
+public static class LogUtils
+{
+    public static void LogException(Exception ex, string messagePrefix = "Caught exception")
+    {
+        Console.WriteLine($"{DateTime.Now} - {messagePrefix}: {ex.Message}");
+            if (Environment.GetEnvironmentVariable("DEBUG") is not null)
+                Console.WriteLine($"Trace: {ex.StackTrace}");
+    }
+}
