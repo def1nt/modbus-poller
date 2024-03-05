@@ -57,9 +57,10 @@ public sealed class Poller
     {
         byte[] buffer = new byte[256];
         int bytesRead;
-        CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(1000));
+        CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(2000));
         try
         {
+            await ClearStreamAsync(_stream);
             await _stream.WriteAsync(request.Data, cts.Token);
             bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), cts.Token);
         }
@@ -83,6 +84,15 @@ public sealed class Poller
                 throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address}");
         }
         return response;
+    }
+
+    private static async Task ClearStreamAsync(Stream stream)
+    {
+        byte[] buffer = new byte[1024]; // Buffer size can be adjusted as needed
+        while (stream is NetworkStream ns && ns.DataAvailable)
+        {
+            await stream.ReadAsync(buffer);
+        }
     }
 
     private async Task AuthenticateDevice()
@@ -175,9 +185,9 @@ public sealed class Poller
         Console.WriteLine(machineData?.DeviceID + ": " + machineData?.stepName);
         Console.WriteLine();
 
+        await Task.CompletedTask;
         // await DebugLog(0x04BC, 1, "шаг");
         // await DebugLog(0x20A, 1, "номер программы");
-
         // Console.WriteLine();
     }
 
