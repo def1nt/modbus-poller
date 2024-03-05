@@ -57,12 +57,13 @@ public sealed class Poller
     {
         byte[] buffer = new byte[256];
         int bytesRead;
+        CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(1000));
         try
         {
-            await _stream.WriteAsync(request.Data).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
-            bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), token).AsTask().WaitAsync(TimeSpan.FromMilliseconds(1000), CancellationToken.None);
+            await _stream.WriteAsync(request.Data, cts.Token);
+            bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), cts.Token);
         }
-        catch (TimeoutException)
+        catch (OperationCanceledException)
         {
             if (retries > 0)
             {
