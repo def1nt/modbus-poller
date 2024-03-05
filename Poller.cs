@@ -174,10 +174,10 @@ public sealed class Poller
         Console.WriteLine(machineData?.DeviceID + ": " + machineData?.stepName);
         Console.WriteLine();
 
-        await DebugLog(0x04BC, 1, "шаг");
-        await DebugLog(0x20A, 1, "номер программы");
+        // await DebugLog(0x04BC, 1, "шаг");
+        // await DebugLog(0x20A, 1, "номер программы");
 
-        Console.WriteLine();
+        // Console.WriteLine();
     }
 
     private async Task DebugLog(ushort address, ushort count, params string[] name) => await DebugLog(address, 3, count, name);

@@ -102,7 +102,7 @@ public sealed class DatabaseRepository : IRepository
                 int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_minutes")?.Value ?? "0"),
                 int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_seconds")?.Value ?? "0")
             );
-            Console.WriteLine($"Time passed: {timePassed},\nTime left: {timeLeft}");
+            // Console.WriteLine($"Time passed: {timePassed},\nTime left: {timeLeft}");
             
             int progress;
             try
