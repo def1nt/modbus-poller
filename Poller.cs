@@ -79,6 +79,11 @@ public sealed class Poller
         ResponsePacket response = new();
         if (bytesRead != 0)
         {
+            // trying to detect if the packet was duplicated because of previous read timeout
+            if (bytesRead % 2 == 0 && buffer.Take(bytesRead / 2).SequenceEqual(buffer.Skip(bytesRead / 2).Take(bytesRead / 2)))
+            {
+                bytesRead /= 2;
+            }
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
                 throw new Exception($"Modbus exception code: {response.ExceptionCode} {request.FunctionCode} at {request.Address}");
