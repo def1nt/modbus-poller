@@ -120,6 +120,11 @@ public sealed class DatabaseRepository : IRepository
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "manual_control")?.Value, out int manualControl);
 
             var status = autoControl == 1 ? "АВТОМАТИЧЕСКИЙ РЕЖИМ" : manualControl == 1 ? "РУЧНОЙ РЕЖИМ" : "БЕЗДЕЙСТВУЕТ";
+            if (autoControl != 1)
+            {
+                data.programName = "";
+                data.stepName = "";
+            }
 
             await DatabaseService.ExecuteNonQuery("DELETE FROM device_cp WHERE unique_id = @DeviceID",
                 ("DeviceID", (long)data.DeviceID)
