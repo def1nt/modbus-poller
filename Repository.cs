@@ -144,25 +144,25 @@ public sealed class DatabaseRepository : IRepository
                 ("status", status)
             );
 
-            // _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value, out int wash_cycle);
-            // _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value, out int all_operating_time);
-            // _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "water_spent_total")?.Value, out int all_water_consumption);
-            // _ = double.TryParse(data.Data.FirstOrDefault(x => x.Codename == "weight")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
-            // _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_time_minutes")?.Value, out int cur_program_time);
-            // await DatabaseService.ExecuteNonQuery("""
-            // INSERT INTO device_math_metrics (device_unique_id, wash_cycle, all_operating_time, all_water_consumption, cur_program_name, cur_weight, cur_program_time, added_at, cur_program_id)
-            // VALUES (@DeviceID, @WashCycle, @AllOperatingTime, @AllWaterConsumption, @ProgramName, @CurWeight, @CurProgramTime, @Timestamp, @currentProgramID)
-            // """,
-            //     ("DeviceID", (long)data.DeviceID),
-            //     ("WashCycle", wash_cycle),
-            //     ("AllOperatingTime", all_operating_time),
-            //     ("AllWaterConsumption", all_water_consumption),
-            //     ("ProgramName", data.programName),
-            //     ("CurWeight", (int)(cur_weight * 10)),
-            //     ("CurProgramTime", cur_program_time),
-            //     ("Timestamp", DateTime.UtcNow),
-            //     ("currentProgramID", currentProgramID)
-            // );
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value, out int wash_cycle);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value, out int total_operating_time);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "water_spent_total")?.Value, out int total_water_consumption);
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "power_spent_total")?.Value, out int total_power_consumption);
+            _ = double.TryParse(data.Data.FirstOrDefault(x => x.Codename == "weight")?.Value, System.Globalization.CultureInfo.GetCultureInfo("en-US"), out double cur_weight);
+            await DatabaseService.ExecuteNonQuery("""
+            INSERT INTO device_math_metrics (device_unique_id, wash_cycle, total_operating_time, total_water_spent, total_power_spent, cur_program_id, cur_program_name, cur_weight, added_at)
+            VALUES (@DeviceID, @WashCycle, @TotalOperatingTime, @TotalWaterSpent, @TotalPowerSpent, @currentProgramID, @ProgramName, @CurWeight, @Timestamp)
+            """,
+                ("DeviceID", (long)data.DeviceID),
+                ("WashCycle", wash_cycle),
+                ("TotalOperatingTime", total_operating_time),
+                ("TotalWaterSpent", total_water_consumption),
+                ("TotalPowerSpent", total_power_consumption),
+                ("currentProgramID", currentProgramID),
+                ("ProgramName", data.programName),
+                ("CurWeight", (int)(cur_weight * 10)),
+                ("Timestamp", DateTime.UtcNow)
+            );
         }
         catch (Exception e)
         {
