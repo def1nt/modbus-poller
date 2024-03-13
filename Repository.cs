@@ -144,6 +144,8 @@ public sealed class DatabaseRepository : IRepository
                 ("status", status)
             );
 
+            if (autoControl != 1) return;
+
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value, out int wash_cycle);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value, out int total_operating_time);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "water_spent_total")?.Value, out int total_water_consumption);
