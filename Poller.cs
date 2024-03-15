@@ -161,7 +161,19 @@ public sealed class Poller
             {
                 machineData.Data.Add(registerData);
             }
-
+            // Debug log program name in bytes
+            if (parameter.Codename == "program_name")
+            {
+                byte[] bytes = new byte[32];
+                for (int j = 0; j < 16; j++) // Parsing over 16 ushorts splitting them into 2 bytes and converting them from ISO 8859-5 to utf-16 by adding 0xFEFF_0360
+                {
+                    byte[] bytes_t = BitConverter.GetBytes(response.Data[j]);
+                    bytes[j * 2] = bytes_t[0];
+                    bytes[j * 2 + 1] = bytes_t[1];
+                }
+                Console.WriteLine($"{machineData.DeviceID}: {parameter.Codename} = {BitConverter.ToString(bytes)}");
+            }
+            //
             parameter.LastPoll = DateTime.Now;
             machineParameters.Parameters[i] = parameter;
         }
