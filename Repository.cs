@@ -102,7 +102,6 @@ public sealed class DatabaseRepository : IRepository
                 int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_minutes")?.Value ?? "0"),
                 int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_seconds")?.Value ?? "0")
             );
-            // Console.WriteLine($"Time passed: {timePassed},\nTime left: {timeLeft}");
             
             int progress;
             try
@@ -124,6 +123,7 @@ public sealed class DatabaseRepository : IRepository
             {
                 data.programName = "";
                 data.stepName = "";
+                progress = 0;
             }
 
             await DatabaseService.ExecuteNonQuery("DELETE FROM device_cp WHERE unique_id = @DeviceID",
