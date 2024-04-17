@@ -167,7 +167,7 @@ public sealed class Poller
         }
         machineData.programName = await GetString(ProgramNameLocation, 16);
         machineData.stepName = await GetString(StepNameLocation, 8);
-        await LogCounters();
+        // await LogCounters();
         if (retries < maxRetries) retries += 1;
         return machineData;
     }
