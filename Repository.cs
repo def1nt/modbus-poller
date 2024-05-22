@@ -43,7 +43,6 @@ public sealed class ConsoleRepository : IRepository
 public sealed class DatabaseRepository : IRepository
 {
     private readonly CancellationToken _token;
-    private Data _data;
     public DatabaseRepository(CancellationToken token = default)
     {
         _token = token;
@@ -54,7 +53,7 @@ public sealed class DatabaseRepository : IRepository
         // Using http to connect to OpenTSDB instance
         var client = new HttpClient();
         client.BaseAddress = new Uri(AppSettings.VictoriaMetricsURL);
-        _data = new()
+        Data _data = new()
         {
             metric = "device" + data.DeviceID,
             value = "",
@@ -83,12 +82,14 @@ public sealed class DatabaseRepository : IRepository
             if (errorCode != 0)
             {
                 await DatabaseService.ExecuteNonQuery("""
-                INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at) VALUES (@DeviceID, @Error, @Cycle, @Timestamp)
+                INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at, program_name, program_step) VALUES (@DeviceID, @Error, @Cycle, @Timestamp, @program_name, @program_step)
                 """,
                     ("DeviceID", (long)data.DeviceID),
                     ("Error", errorCode),
                     ("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value ?? "0")),
-                    ("Timestamp", DateTime.UtcNow)
+                    ("Timestamp", DateTime.UtcNow),
+                    ("program_name", data.programName),
+                    ("program_step", data.stepName)
                 );
             }
 
