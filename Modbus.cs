@@ -124,7 +124,7 @@ public sealed class ResponsePacket : Packet
     public uint Length { get => (uint)_data.Length; }
     public byte UnitID
     {
-        get
+        get // TODO: Check actual lenght perhaps
         {
             return _data[0];
         }
@@ -179,10 +179,14 @@ public sealed class ResponsePacket : Packet
             }
             else if (FunctionCode == 1)
             {
-                ushort[] data = new ushort[ByteCount];
-                for (int i = 0; i < data.Length; i++)
+                ushort[] data = new ushort[ByteCount * 8];
+                for (int i = 0; i < ByteCount; i++)
                 {
-                    data[i] = _data[3 + i];
+                    byte b = _data[3 + i];
+                    for (int j = 0; j < 8; j++)
+                    {
+                        data[i * 8 + j] = (ushort)((b >> j) & 1);
+                    }
                 }
                 return data;
             }
