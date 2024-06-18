@@ -166,6 +166,34 @@ public sealed class DatabaseRepository : IRepository
                 ("CurWeight", (int)(cur_weight * 10)),
                 ("Timestamp", DateTime.UtcNow)
             );
+
+            var msList = new List<string>() { "ms1", "ms2", "ms3", "ms4", "ms5", "ms6", "ms7", "ms8", "ms9" };
+            int[] msInts = new int[9];
+            for (int i = 0; i < msList.Count; i++)
+            {
+                var ms = msList[i];
+                _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == ms)?.Value, out msInts[i]);
+            }
+
+            // int last = (await DatabaseService.ExecuteScalar($"SELECT ms FROM cleaners WHERE device_id == {data.DeviceID} ORDER BY date DESC")) as int? ?? 0;
+            await DatabaseService.ExecuteNonQuery("""
+            INSERT INTO cleaners (device_id, wash_cycle, ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, datetime)
+            VALUES (@DeviceID, @wash_cycle, @ms1, @ms2, @ms3, @ms4, @ms5, @ms6, @ms7, @ms8, @ms9, @DateTime)
+            """,
+                ("DeviceID", data.DeviceID),
+                ("wash_cycle", wash_cycle),
+                ("ms1", msInts[0]),
+                ("ms2", msInts[1]),
+                ("ms3", msInts[2]),
+                ("ms4", msInts[3]),
+                ("ms5", msInts[4]),
+                ("ms6", msInts[5]),
+                ("ms7", msInts[6]),
+                ("ms8", msInts[7]),
+                ("ms9", msInts[8]),
+                ("DateTime", DateTime.UtcNow)
+            );
+
         }
         catch (Exception e)
         {
