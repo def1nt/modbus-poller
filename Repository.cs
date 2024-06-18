@@ -175,10 +175,11 @@ public sealed class DatabaseRepository : IRepository
                 _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == ms)?.Value, out msInts[i]);
             }
 
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "current_step")?.Value, out int stepNumber);
             // int last = (await DatabaseService.ExecuteScalar($"SELECT ms FROM device_cleaners WHERE device_id == {data.DeviceID} ORDER BY date DESC")) as int? ?? 0;
             await DatabaseService.ExecuteNonQuery("""
-            INSERT INTO device_cleaners (device_unique_id, wash_cycle, ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, added_at)
-            VALUES (@DeviceID, @wash_cycle, @ms1, @ms2, @ms3, @ms4, @ms5, @ms6, @ms7, @ms8, @ms9, @DateTime)
+            INSERT INTO device_cleaners (device_unique_id, wash_cycle, ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, added_at, step_number)
+            VALUES (@DeviceID, @wash_cycle, @ms1, @ms2, @ms3, @ms4, @ms5, @ms6, @ms7, @ms8, @ms9, @DateTime, @StepNumber)
             """,
                 ("DeviceID", (long)data.DeviceID),
                 ("wash_cycle", wash_cycle),
@@ -191,7 +192,8 @@ public sealed class DatabaseRepository : IRepository
                 ("ms7", msInts[6]),
                 ("ms8", msInts[7]),
                 ("ms9", msInts[8]),
-                ("DateTime", DateTime.UtcNow)
+                ("DateTime", DateTime.UtcNow),
+                ("StepNumber", stepNumber)
             );
 
         }
