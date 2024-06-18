@@ -180,7 +180,7 @@ public sealed class DatabaseRepository : IRepository
             INSERT INTO cleaners (device_id, wash_cycle, ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, datetime)
             VALUES (@DeviceID, @wash_cycle, @ms1, @ms2, @ms3, @ms4, @ms5, @ms6, @ms7, @ms8, @ms9, @DateTime)
             """,
-                ("DeviceID", data.DeviceID),
+                ("DeviceID", (long)data.DeviceID),
                 ("wash_cycle", wash_cycle),
                 ("ms1", msInts[0]),
                 ("ms2", msInts[1]),
