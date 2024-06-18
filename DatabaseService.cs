@@ -37,4 +37,16 @@ public static class DatabaseService
         }
         return await cmd.ExecuteNonQueryAsync();
     }
+
+    public async static Task<object?> ExecuteScalar(string query)
+    {
+        using var connection = new NpgsqlConnection(_connectionString);
+        connection.Open();
+        if (connection.State != ConnectionState.Open)
+        {
+            throw new NpgsqlException("Could not connect to database");
+        }
+        using var cmd = new NpgsqlCommand(query, connection);
+        return await cmd.ExecuteScalarAsync();
+    }
 }
