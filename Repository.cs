@@ -177,7 +177,7 @@ public sealed class DatabaseRepository : IRepository
 
             // int last = (await DatabaseService.ExecuteScalar($"SELECT ms FROM device_cleaners WHERE device_id == {data.DeviceID} ORDER BY date DESC")) as int? ?? 0;
             await DatabaseService.ExecuteNonQuery("""
-            INSERT INTO device_cleaners (device_id, wash_cycle, ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, datetime)
+            INSERT INTO device_cleaners (device_unique_id, wash_cycle, ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, datetime)
             VALUES (@DeviceID, @wash_cycle, @ms1, @ms2, @ms3, @ms4, @ms5, @ms6, @ms7, @ms8, @ms9, @DateTime)
             """,
                 ("DeviceID", (long)data.DeviceID),
