@@ -78,19 +78,34 @@ public sealed class DatabaseRepository : IRepository
 
         try
         {
+            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value, out int wash_cycle);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "errors")?.Value, out int errorCode);
             if (errorCode != 0)
             {
-                await DatabaseService.ExecuteNonQuery("""
-                INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at, program_name, program_step) VALUES (@DeviceID, @Error, @Cycle, @Timestamp, @program_name, @program_step)
-                """,
-                    ("DeviceID", (long)data.DeviceID),
-                    ("Error", errorCode),
-                    ("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value ?? "0")),
-                    ("Timestamp", DateTime.UtcNow),
-                    ("program_name", data.programName),
-                    ("program_step", data.stepName)
-                );
+                int errCount = await DatabaseService.ExecuteScalar($"""
+                SELECT count(*) FROM device_errs 
+                WHERE
+                device_unique_id={(long)data.DeviceID}  
+                AND err_id={errorCode}
+                AND w_cycle={wash_cycle}
+                AND COALESCE(program_name,'')='{data.programName}' 
+                AND COALESCE(program_step,'')='{data.stepName}'
+                """) as int? ?? 0;
+
+                if (errCount == 0)
+                {
+                    await DatabaseService.ExecuteNonQuery("""
+                    INSERT INTO device_errs (device_unique_id, err_id, w_cycle, added_at, program_name, program_step)
+                    VALUES (@DeviceID, @Error, @Cycle, @Timestamp, @program_name, @program_step)
+                    """,
+                        ("DeviceID", (long)data.DeviceID),
+                        ("Error", errorCode),
+                        ("Cycle", int.Parse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value ?? "0")),
+                        ("Timestamp", DateTime.UtcNow),
+                        ("program_name", data.programName),
+                        ("program_step", data.stepName)
+                    );
+                }
             }
 
             var timePassed = new TimeSpan(
@@ -103,7 +118,7 @@ public sealed class DatabaseRepository : IRepository
                 int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_minutes")?.Value ?? "0"),
                 int.Parse(data.Data.FirstOrDefault(d => d.Codename == "time_left_seconds")?.Value ?? "0")
             );
-            
+
             int progress;
             try
             {
@@ -147,7 +162,6 @@ public sealed class DatabaseRepository : IRepository
 
             if (autoControl != 1) return;
 
-            _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "program_counter")?.Value, out int wash_cycle);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "operating_hours")?.Value, out int total_operating_time);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "water_spent_total")?.Value, out int total_water_consumption);
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "power_spent_total")?.Value, out int total_power_consumption);
