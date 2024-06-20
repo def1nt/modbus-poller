@@ -90,7 +90,7 @@ public sealed class DatabaseRepository : IRepository
                 AND w_cycle={wash_cycle}
                 AND COALESCE(program_name,'')='{data.programName}' 
                 AND COALESCE(program_step,'')='{data.stepName}'
-                """) as int? ?? 0;
+                """);
 
                 if (errCount == 0)
                 {

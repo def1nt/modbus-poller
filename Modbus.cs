@@ -124,8 +124,10 @@ public sealed class ResponsePacket : Packet
     public uint Length { get => (uint)_data.Length; }
     public byte UnitID
     {
-        get // TODO: Check actual lenght perhaps
+        get
         {
+            if (Length < 1)
+                throw new ArgumentException("Invalid packet length");
             return _data[0];
         }
     }
@@ -167,7 +169,7 @@ public sealed class ResponsePacket : Packet
 
             if (FunctionCode == 3)
             {
-                ushort[] data = new ushort[ByteCount / 2]; // TODO: check if this line is correct, sometimes throws exception
+                ushort[] data = new ushort[ByteCount / 2]; // If ByteCount is incosistent with actual data, it will be truncated or throw
                 byte[] bytes = new byte[2];
                 for (int i = 0; i < data.Length; i++)
                 {

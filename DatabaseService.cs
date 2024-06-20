@@ -38,6 +38,14 @@ public static class DatabaseService
         return await cmd.ExecuteNonQueryAsync();
     }
 
+    /// <summary>
+    /// Executes query against our current database and returns single value result.
+    /// </summary>
+    /// <typeparam name="T">Type of the expected value. DO NOT PASS any Nullable types.</typeparam>
+    /// <param name="query">A complete SQL query to run.</param>
+    /// <returns>Value of type T? in case of reference types and value of type T in case of value types, converted from object? returned by the query.</returns>
+    /// <exception cref="NpgsqlException"></exception>
+    /// <exception cref="InvalidCastException"></exception>
     public async static Task<T?> ExecuteScalar<T>(string query)
     {
         using var connection = new NpgsqlConnection(_connectionString);
