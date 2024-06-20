@@ -82,7 +82,7 @@ public sealed class DatabaseRepository : IRepository
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "errors")?.Value, out int errorCode);
             if (errorCode != 0)
             {
-                var errCount = await DatabaseService.ExecuteScalar<long?>($"""
+                var errCount = await DatabaseService.ExecuteScalar<long>($"""
                 SELECT count(*) FROM device_errs 
                 WHERE
                 device_unique_id={(long)data.DeviceID}  
