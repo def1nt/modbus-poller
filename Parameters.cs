@@ -58,7 +58,9 @@ public sealed class MachineParameters
         Parameters = new List<RegisterInfo>();
         Parameters = modelParametersProvider.GetParameters()
                                             .GroupBy(p => p.Codename)
-                                            .Select(g => g.FirstOrDefault(p => p.Version == Version) ?? g.First(p => p.Version == 0))
+                                            .Select(g => g.FirstOrDefault(p => p.Version == Version) ?? g.FirstOrDefault(p => p.Version == 0))
+                                            .Where(p => p is not null)
+                                            .Select(p => p!)
                                             .ToList();
     }
 
