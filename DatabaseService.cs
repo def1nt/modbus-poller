@@ -38,7 +38,7 @@ public static class DatabaseService
         return await cmd.ExecuteNonQueryAsync();
     }
 
-    public async static Task<object?> ExecuteScalar(string query)
+    public async static Task<T?> ExecuteScalar<T>(string query)
     {
         using var connection = new NpgsqlConnection(_connectionString);
         connection.Open();
@@ -47,6 +47,7 @@ public static class DatabaseService
             throw new NpgsqlException("Could not connect to database");
         }
         using var cmd = new NpgsqlCommand(query, connection);
-        return await cmd.ExecuteScalarAsync();
+        var result = await cmd.ExecuteScalarAsync();
+        return (T?)Convert.ChangeType(result, typeof(T));
     }
 }
