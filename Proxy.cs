@@ -5,18 +5,18 @@ using System.Net.Sockets;
 
 public sealed class PollerProxy
 {
-    MachineParameters? machineParameters;
+    private readonly MachineParameters? machineParameters;
 
-    List<(int addr, byte code)> addresses = new(); // Assume sorted
-    List<Bundle> addressBundles = new();
+    private List<(int addr, byte code)> addresses = new();
+    private readonly List<Bundle> addressBundles = new();
     private readonly NetworkStream _stream;
 
     Dictionary<(int addr, byte code), ushort> data = new();
 
-    public PollerProxy(MachineParameters? machineParameters, NetworkStream stream)
+    public PollerProxy(MachineParameters machineParameters, NetworkStream stream)
     {
-        this.machineParameters = machineParameters ?? new MachineParameters(0, 0);
-        this._stream = stream;
+        this.machineParameters = machineParameters ?? throw new ArgumentNullException(nameof(machineParameters));
+        _stream = stream;
         ExtractAddresses();
         Bundle(1);
         Bundle(3);
@@ -35,38 +35,31 @@ public sealed class PollerProxy
         addresses = addresses.OrderBy(a => a.addr).ToList();
     }
 
-    public void Bundle(int f)
+    private void Bundle(int f)
     {
-        int previous = addresses[0].addr - 1;
-        Bundle newb = new Bundle
-        {
-            functionCode = f
-        };
-        addressBundles.Add(newb);
+        int previous = 0;
 
-        foreach (var address in addresses.Where(a => a.code == f))
+        foreach (var (addr, code) in addresses.Where(a => a.code == f))
         {
-            if (address.addr - previous <= 4)
+            if (addr - previous <= 4)
             {
-                addressBundles[^1].Add(address.addr);
+                addressBundles[^1].Add(addr);
             }
-            else if (address.addr > previous + 1)
+            else if (addr > previous + 1)
             {
-                newb = new Bundle() { address.addr };
+                Bundle newb = new() { addr };
                 newb.functionCode = f;
                 addressBundles.Add(newb);
             }
-            previous = address.addr;
+            previous = addr;
         }
-        // System.Console.WriteLine(addressBundles.Count);
     }
 
     private void ExtendBundles()
     {
         foreach (var bundle in addressBundles)
         {
-            System.Console.WriteLine(bundle.Count);
-            if (bundle.Count < 1) continue;
+            if (bundle.Count < 1) throw new Exception("Bundle is empty"); // DEBUG
             int first = bundle[0];
             int last = bundle[^1];
 
@@ -77,10 +70,11 @@ public sealed class PollerProxy
         }
     }
 
-    public async Task PollBundle(Bundle bundle)
+    private async Task PollBundle(Bundle bundle)
     {
         // Goind through bundles, querying data from first address with length of bundle
-        // Receiving data and putting each int16 into a data dictionary with address as key
+        // Receiving data and putting each int16 into a data dictionary with address and function as key
+        Console.WriteLine($"Polling bundle: {bundle[0]}"); // DEBUG
         int first = bundle[0];
         byte code = (byte)bundle.functionCode;
         RequestPacket request = new(1, code, (ushort)first, (ushort)bundle.Length);
@@ -108,9 +102,7 @@ public sealed class PollerProxy
         }
         else if (bundle.Stale)
         {
-            // Console.WriteLine("Started polling");
             PollBundle(bundle).Wait();
-            // Console.WriteLine("Finished polling");
         }
 
         // Everything is fine, look for data and return it
@@ -122,7 +114,7 @@ public sealed class PollerProxy
         {
             data[i] = this.data[(first + i, code)];
         }
-
+        Console.WriteLine($"Serving data: {first} {JsonSerializer.Serialize(data)}"); // DEBUG
         return data;
     }
 
@@ -160,8 +152,7 @@ public sealed class PollerProxy
 
     public override string ToString()
     {
-        // return JsonSerializer.Serialize(addresses) + "\n" + JsonSerializer.Serialize(addressBundles, new JsonSerializerOptions() { IncludeFields = true, MaxDepth = 2 }) + $"\nOriginally addresses: {addresses.Count}; After bundling bundles: {addressBundles.Count}\n";
-        return JsonSerializer.Serialize(addresses) + "\n" + addressBundles.Aggregate("", (b, s) => s + b.ToString()) + $"\nOriginally addresses: {addresses.Count}; After bundling bundles: {addressBundles.Count}\n";
+        return addresses.Aggregate("", (s, b) => s + b.addr + ", ") + "\n" + addressBundles.Aggregate("", (b, s) => s + b.ToString()) + $"\nOriginally addresses: {addresses.Count}; After bundling bundles: {addressBundles.Count}\n";
     }
 }
 
@@ -197,6 +188,6 @@ public class Bundle : List<int>
 
     public override string ToString()
     {
-        return $"Bundle: {JsonSerializer.Serialize(this)},\tLength: {Length}\n";
+        return $"Function: {functionCode},\tLength: {Length},\tBundle: {JsonSerializer.Serialize(this)}\n";
     }
 }
