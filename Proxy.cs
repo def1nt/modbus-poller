@@ -47,9 +47,9 @@ public sealed class PollerProxy
             }
             else if (addr > previous + 1)
             {
-                Bundle newb = new() { addr };
-                newb.functionCode = f;
-                addressBundles.Add(newb);
+                Bundle newBundle = new() { addr };
+                newBundle.functionCode = f;
+                addressBundles.Add(newBundle);
             }
             previous = addr;
         }
@@ -59,7 +59,6 @@ public sealed class PollerProxy
     {
         foreach (var bundle in addressBundles)
         {
-            if (bundle.Count < 1) throw new Exception("Bundle is empty"); // DEBUG
             int first = bundle[0];
             int last = bundle[^1];
 
@@ -74,7 +73,6 @@ public sealed class PollerProxy
     {
         // Goind through bundles, querying data from first address with length of bundle
         // Receiving data and putting each int16 into a data dictionary with address and function as key
-        Console.WriteLine($"Polling bundle: {bundle[0]}"); // DEBUG
         int first = bundle[0];
         byte code = (byte)bundle.functionCode;
         RequestPacket request = new(1, code, (ushort)first, (ushort)bundle.Length);
@@ -89,7 +87,6 @@ public sealed class PollerProxy
             else data.Add((first + i, code), result.Data[i]);
         }
         bundle.Stale = false;
-        bundle.lastUpdate = DateTime.Now;
     }
 
     public ushort[] GetData(RegisterInfo registerInfo)
@@ -114,7 +111,6 @@ public sealed class PollerProxy
         {
             data[i] = this.data[(first + i, code)];
         }
-        Console.WriteLine($"Serving data: {first} {JsonSerializer.Serialize(data)}"); // DEBUG
         return data;
     }
 
@@ -180,10 +176,11 @@ public class Bundle : List<int>
         set
         {
             stale = value;
+            if (stale == false) lastUpdate = DateTime.Now;
         }
     }
     private bool stale = true;
-    public DateTime lastUpdate;
+    private DateTime lastUpdate;
     public Bundle() : base() { }
 
     public override string ToString()
