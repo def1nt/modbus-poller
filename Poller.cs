@@ -7,8 +7,6 @@ using Utils;
 public sealed class Poller
 {
     private const ushort IDLocation = 0x1400;
-    private const ushort ProgramNameLocation = 0x1B58;
-    private const ushort StepNameLocation = 0x1B6C;
     private readonly CancellationToken token = default;
     private readonly IRepository _repository;
     private readonly TcpClient _tcpClient;
@@ -16,6 +14,7 @@ public sealed class Poller
     private MachineParameters? machineParameters;
     private MachineData? machineData;
     private DeviceInfo? _deviceInfo;
+    private PollerProxy? proxy;
     private int retries = 1;
     private readonly int maxRetries = 3;
 
@@ -35,6 +34,7 @@ public sealed class Poller
             Console.WriteLine($"{DateTime.Now} - Client from {_tcpClient.Client.RemoteEndPoint} authenticated as {_deviceInfo!.DeviceName} with ID {_deviceInfo.DeviceID}");
             if (_deviceInfo!.Active == false) await InfiniteLoop();
             machineParameters = new(_deviceInfo!.SeriesID, _deviceInfo.PLCVersion);
+            proxy = new(machineParameters, _stream);
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();
@@ -126,16 +126,17 @@ public sealed class Poller
     {
         if (_deviceInfo is null) throw new System.Security.SecurityException($"Device authentication failed: device info is null");
         machineData ??= new(_deviceInfo.DeviceID);
-        RequestPacket request = new();
+        proxy ??= new(machineParameters!, _stream);
         for (int i = 0; i < machineParameters?.Parameters.Count; i++)
         {
             var parameter = machineParameters.Parameters[i];
             if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval))
                 continue;
             var (type, length) = StringUtils.DecodeTypeFromString(parameter.Type);
-            request.SetData(1, parameter.Function, StringUtils.HexStringToUShort(parameter.Address), (ushort)length);
-            var response = await SendReceiveAsync(request);
-            if (response.Data.Length == 0) continue;
+
+            ushort[] Data = proxy.GetData(machineParameters.Parameters[i]);
+
+            if (Data.Length == 0) continue;
             RegisterData registerData = new()
             {
                 Timestamp = DateTime.Now,
@@ -143,13 +144,14 @@ public sealed class Poller
                 Codename = parameter.Codename,
                 Value = type switch
                 { // Remember: word order is reversed in modbus
-                    Type t when t == typeof(ushort) => (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(short) => (((short)response.Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(uint) => (RegisterUtils.CombineRegisters(response.Data[1], response.Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(response.Data[1], response.Data[0])) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(bool) => (response.Data[0] & 1).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(string) => StringUtils.ASCIIBytesToUTFString(response.Data),
-                    _ => (response.Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US"))
+                    Type t when t == typeof(ushort) => (Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(short) => (((short)Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(uint) => (RegisterUtils.CombineRegisters(Data[1], Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(Data[1], Data[0])) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(bool) => (Data[0] & 1).ToString(CultureInfo.GetCultureInfo("en-US")),
+                    Type t when t == typeof(string) => StringUtils.ASCIIBytesToUTFString(Data),
+                    Type t when t == typeof(byte) => Data.Reverse().Aggregate("", (s, c) => s + c.ToString()), // ReadFunction was 1, Data is bit flags, filler implementation
+                    _ => (Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US"))
                 }
             };
             var existingDataIndex = machineData.Data.FindIndex(x => x.Codename == registerData.Codename);
@@ -165,22 +167,12 @@ public sealed class Poller
             parameter.LastPoll = DateTime.Now;
             machineParameters.Parameters[i] = parameter;
         }
-        machineData.programName = await GetString(ProgramNameLocation, 16);
-        machineData.stepName = await GetString(StepNameLocation, 8);
+        machineData.programName = machineData.Data.FirstOrDefault(p => p.Codename == "program_name")?.Value ?? "Unknown";
+        machineData.stepName = machineData.Data.FirstOrDefault(p => p.Codename == "step_name")?.Value ?? "Unknown";
         // await LogCounters();
         if (retries < maxRetries) retries += 1;
+        await Task.CompletedTask;
         return machineData;
-    }
-
-    private async Task<string> GetString(ushort address, ushort count)
-    {
-        RequestPacket request = new(1, 3, address, count);
-        var response = await SendReceiveAsync(request);
-        if (response.Data.Length == count)
-        {
-            return StringUtils.ASCIIBytesToUTFString(response.Data);
-        }
-        return string.Empty;
     }
 
     private async Task LogCounters() // TODO: Temporary, remove later

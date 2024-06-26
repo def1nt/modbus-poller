@@ -36,6 +36,7 @@ public static class StringUtils
     public static (Type type, int length) DecodeTypeFromString(string type)
     {
         if (type.Contains("string")) return (typeof(string), int.Parse(type.Split('[')[1].Split(']')[0]));
+        if (type.Contains("bitflags")) return (typeof(byte), int.Parse(type.Split('[')[1].Split(']')[0]));
         return type switch
         {
             "uint16" => (typeof(ushort), 1),
@@ -71,7 +72,7 @@ public static class LogUtils
     public static void LogException(Exception ex, string messagePrefix = "Caught exception")
     {
         Console.WriteLine($"{DateTime.Now} - {messagePrefix}: {ex.Message}");
-            if (Environment.GetEnvironmentVariable("DEBUG") is not null)
-                Console.WriteLine($"Trace: {ex.StackTrace}");
+        if (Environment.GetEnvironmentVariable("DEBUG") is not null)
+            Console.WriteLine($"Trace: {ex.StackTrace}");
     }
 }
