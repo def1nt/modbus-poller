@@ -14,7 +14,6 @@ public sealed class Poller
     private MachineParameters? machineParameters;
     private MachineData? machineData;
     private DeviceInfo? _deviceInfo;
-    private PollerProxy? proxy;
     private int retries = 1;
     private readonly int maxRetries = 3;
 
@@ -34,7 +33,6 @@ public sealed class Poller
             Console.WriteLine($"{DateTime.Now} - Client from {_tcpClient.Client.RemoteEndPoint} authenticated as {_deviceInfo!.DeviceName} with ID {_deviceInfo.DeviceID}");
             if (_deviceInfo!.Active == false) await InfiniteLoop();
             machineParameters = new(_deviceInfo!.SeriesID, _deviceInfo.PLCVersion);
-            proxy = new(machineParameters, _stream);
             while (token.IsCancellationRequested == false)
             {
                 var machineData = await Poll();
@@ -126,7 +124,7 @@ public sealed class Poller
     {
         if (_deviceInfo is null) throw new System.Security.SecurityException($"Device authentication failed: device info is null");
         machineData ??= new(_deviceInfo.DeviceID);
-        proxy ??= new(machineParameters!, _stream);
+        PollerProxy proxy = new(machineParameters!, _stream);
         for (int i = 0; i < machineParameters?.Parameters.Count; i++)
         {
             var parameter = machineParameters.Parameters[i];
@@ -134,7 +132,7 @@ public sealed class Poller
                 continue;
             var (type, length) = StringUtils.DecodeTypeFromString(parameter.Type);
 
-            ushort[] Data = proxy.GetData(machineParameters.Parameters[i]);
+            ushort[] Data = await proxy.GetData(machineParameters.Parameters[i]);
 
             if (Data.Length == 0) continue;
             RegisterData registerData = new()

@@ -89,7 +89,7 @@ public sealed class PollerProxy
         bundle.Stale = false;
     }
 
-    public ushort[] GetData(RegisterInfo registerInfo)
+    public async Task<ushort[]> GetData(RegisterInfo registerInfo)
     {
         // Looking to which bundle the address belongs
         Bundle? bundle = addressBundles.Find(x => x.Contains(StringUtils.HexStringToUShort(registerInfo.Address)) && x.functionCode == registerInfo.Function);
@@ -99,7 +99,7 @@ public sealed class PollerProxy
         }
         else if (bundle.Stale)
         {
-            PollBundle(bundle).Wait();
+            await PollBundle(bundle);
         }
 
         // Everything is fine, look for data and return it
