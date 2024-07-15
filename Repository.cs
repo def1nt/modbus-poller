@@ -181,7 +181,7 @@ public sealed class DatabaseRepository : IRepository
                 ("Timestamp", DateTime.UtcNow)
             );
 
-            var msList = new List<string>() { "ms1", "ms2", "ms3", "ms4", "ms5", "ms6", "ms7", "ms8", "ms9" };
+            var msList = new List<string>() { "ms1_spent", "ms2_spent", "ms3_spent", "ms4_spent", "ms5_spent", "ms6_spent", "ms7_spent", "ms8_spent", "ms9_spent" };
             int[] msInts = new int[9];
             for (int i = 0; i < msList.Count; i++)
             {
