@@ -188,27 +188,51 @@ public sealed class DatabaseRepository : IRepository
                 var ms = msList[i];
                 _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == ms)?.Value, out msInts[i]);
             }
-
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "current_step")?.Value, out int stepNumber);
-            // int last = (await DatabaseService.ExecuteScalar($"SELECT ms FROM device_cleaners WHERE device_id == {data.DeviceID} ORDER BY date DESC")) as int? ?? 0;
-            await DatabaseService.ExecuteNonQuery("""
-            INSERT INTO device_cleaners (device_unique_id, wash_cycle, ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, added_at, step_number)
-            VALUES (@DeviceID, @wash_cycle, @ms1, @ms2, @ms3, @ms4, @ms5, @ms6, @ms7, @ms8, @ms9, @DateTime, @StepNumber)
-            """,
-                ("DeviceID", (long)data.DeviceID),
-                ("wash_cycle", wash_cycle),
-                ("ms1", msInts[0]),
-                ("ms2", msInts[1]),
-                ("ms3", msInts[2]),
-                ("ms4", msInts[3]),
-                ("ms5", msInts[4]),
-                ("ms6", msInts[5]),
-                ("ms7", msInts[6]),
-                ("ms8", msInts[7]),
-                ("ms9", msInts[8]),
-                ("DateTime", DateTime.UtcNow),
-                ("StepNumber", stepNumber)
-            );
+
+            int c = await DatabaseService.ExecuteScalar<int>($"SELECT COUNT (*) FROM device_cleaners WHERE device_unique_id = {(long)data.DeviceID} AND wash_cycle = {wash_cycle} AND step_number = {stepNumber}");
+            if (c == 0)
+            {
+                await DatabaseService.ExecuteNonQuery("""
+                INSERT INTO device_cleaners (device_unique_id, wash_cycle, ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, added_at, step_number)
+                VALUES (@DeviceID, @wash_cycle, @ms1, @ms2, @ms3, @ms4, @ms5, @ms6, @ms7, @ms8, @ms9, @DateTime, @StepNumber)
+                """,
+                    ("DeviceID", (long)data.DeviceID),
+                    ("wash_cycle", wash_cycle),
+                    ("ms1", msInts[0]),
+                    ("ms2", msInts[1]),
+                    ("ms3", msInts[2]),
+                    ("ms4", msInts[3]),
+                    ("ms5", msInts[4]),
+                    ("ms6", msInts[5]),
+                    ("ms7", msInts[6]),
+                    ("ms8", msInts[7]),
+                    ("ms9", msInts[8]),
+                    ("DateTime", DateTime.UtcNow),
+                    ("StepNumber", stepNumber)
+                );
+            }
+            else
+            {
+                await DatabaseService.ExecuteNonQuery("""
+                UPDATE device_cleaners SET ms1 = @ms1, ms2 = @ms2, ms3 = @ms3, ms4 = @ms4, ms5 = @ms5, ms6 = @ms6, ms7 = @ms7, ms8 = @ms8, ms9 = @ms9, added_at = @DateTime
+                WHERE device_unique_id = @DeviceID AND wash_cycle = @wash_cycle AND step_number = @StepNumber
+                """,
+                    ("DeviceID", (long)data.DeviceID),
+                    ("wash_cycle", wash_cycle),
+                    ("ms1", msInts[0]),
+                    ("ms2", msInts[1]),
+                    ("ms3", msInts[2]),
+                    ("ms4", msInts[3]),
+                    ("ms5", msInts[4]),
+                    ("ms6", msInts[5]),
+                    ("ms7", msInts[6]),
+                    ("ms8", msInts[7]),
+                    ("ms9", msInts[8]),
+                    ("DateTime", DateTime.UtcNow),
+                    ("StepNumber", stepNumber)
+                );
+            }
 
         }
         catch (Exception e)
