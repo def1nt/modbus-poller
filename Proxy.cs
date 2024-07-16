@@ -135,9 +135,17 @@ public sealed class PollerProxy
         if (bytesRead != 0)
         {
             // trying to detect if the packet was duplicated because of previous read timeout
-            if (bytesRead % 2 == 0 && buffer.Take(bytesRead / 2).SequenceEqual(buffer.Skip(bytesRead / 2).Take(bytesRead / 2)))
+            if (bytesRead % 4 == 0 && buffer.Take(bytesRead / 4).SequenceEqual(buffer.Skip(bytesRead * 3 / 4).Take(bytesRead / 4)))
+            {
+                bytesRead /= 4;
+            }
+            else if (bytesRead % 2 == 0 && buffer.Take(bytesRead / 2).SequenceEqual(buffer.Skip(bytesRead / 2).Take(bytesRead / 2)))
             {
                 bytesRead /= 2;
+            }
+            else if (bytesRead % 3 == 0 && buffer.Take(bytesRead / 3).SequenceEqual(buffer.Skip(bytesRead * 2 / 3).Take(bytesRead / 3)))
+            {
+                bytesRead /= 3;
             }
             response.SetData(buffer.Take(bytesRead).ToArray());
             if (response.ExceptionCode != 0)
