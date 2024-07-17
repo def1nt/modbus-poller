@@ -3,6 +3,11 @@ using Modbus;
 using Utils;
 using System.Net.Sockets;
 
+/// <summary>
+/// A proxy object that can do an actuall polling of the device connected to the appropriate network stream.
+/// It bundles close address sequences together to poll them in a single packet.
+/// All received data is then cached in a Bundle object and can be returrned to caller without extra network requests.
+/// </summary>
 public sealed class PollerProxy
 {
     private readonly MachineParameters? machineParameters;

@@ -161,7 +161,7 @@ public sealed class ResponsePacket : Packet
         }
     }
 
-    public ushort[] Data
+    public ushort[] Data // TODO: Make property cacheable
     {
         get
         {
@@ -179,7 +179,7 @@ public sealed class ResponsePacket : Packet
                 }
                 return data;
             }
-            else if (FunctionCode == 1)
+            else if (FunctionCode == 1) // Protocol sends bits BE bundled in bytes arranged left-to-right, LE, like 8002 should be 0280 if seen bit-wise
             {
                 ushort[] data = new ushort[ByteCount * 8];
                 for (int i = 0; i < ByteCount; i++)
