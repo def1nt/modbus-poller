@@ -46,7 +46,7 @@ public sealed class PollerProxy
 
         foreach (var (addr, code) in addresses.Where(a => a.code == f))
         {
-            if (addr - previous <= 4)
+            if (addr - previous <= 9)
             {
                 addressBundles[^1].Add(addr);
             }
@@ -81,10 +81,10 @@ public sealed class PollerProxy
         int first = bundle[0];
         byte code = (byte)bundle.functionCode;
         RequestPacket request = new(1, code, (ushort)first, (ushort)bundle.Length);
-        var result = await SendReceiveAsync(request, 3);
-        if (result.Data.Length == 0)
+        var result = await SendReceiveAsync(request);
+        if (result.Data.Length < bundle.Length)
         {
-            throw new Exception("No data received");
+            throw new InvalidOperationException("Not enough data received");
         }
         for (int i = 0; i < result.Data.Length; i++)
         {
@@ -119,14 +119,14 @@ public sealed class PollerProxy
         return data;
     }
 
-    private async Task<ResponsePacket> SendReceiveAsync(RequestPacket request, int retries = 3)
+    private async Task<ResponsePacket> SendReceiveAsync(RequestPacket request, int retries = 0)
     {
         if (retries < 0)
             throw new TimeoutException($"Modbus request timed out: {request.FunctionCode} at {request.Address}");
 
         byte[] buffer = new byte[256];
         int bytesRead;
-        CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(2000));
+        CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(3000));
         try
         {
             await _stream.WriteAsync(request.Data, cts.Token);

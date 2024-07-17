@@ -43,10 +43,11 @@ public sealed class Poller
         catch (Exception e)
         {
             LogUtils.LogException(e, $"Poller.RunAsync() {e.GetType()} from {machineData?.DeviceID}");
+            if (e is System.Security.SecurityException)
+                await Task.Delay(30000);
         }
         finally
         {
-            await Task.Delay(10000);
             if (_tcpClient.Connected) _tcpClient.Close();
         }
     }
@@ -118,7 +119,7 @@ public sealed class Poller
         var id = response.Data[1];
         var secret = response.Data[2];
         var plcversion = response.Data[3];
-        await DebugLog(IDLocation, 4, "series", "id", "secret", "plcversion");
+        // await DebugLog(IDLocation, 4, "series", "id", "secret", "plcversion");
         // combining series and id into one 32-bit integer for device id
         var deviceID = (uint)series << 16 | id;
         if ((_deviceInfo = Authenticator.AuthenticateDevice(deviceID, secret)) is null)
