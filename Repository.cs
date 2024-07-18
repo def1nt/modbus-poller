@@ -188,6 +188,8 @@ public sealed class DatabaseRepository : IRepository
                 var ms = msList[i];
                 _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == ms)?.Value, out msInts[i]);
             }
+            if (msInts.All(m => m == 0)) return; // Если моющие средства все по нулям - мы их не записываем
+
             _ = int.TryParse(data.Data.FirstOrDefault(x => x.Codename == "current_step")?.Value, out int stepNumber);
 
             int c = await DatabaseService.ExecuteScalar<int>($"SELECT COUNT (*) FROM device_cleaners WHERE device_unique_id = {(long)data.DeviceID} AND wash_cycle = {wash_cycle} AND step_number = {stepNumber}");
