@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using Security;
 using Modbus;
 using Utils;
+using System.Security;
 
 public sealed class Poller
 {
@@ -43,7 +44,7 @@ public sealed class Poller
         catch (Exception e)
         {
             LogUtils.LogException(e, $"Poller.RunAsync() {e.GetType()} from {machineData?.DeviceID}");
-            if (e is System.Security.SecurityException)
+            if (e is SecurityException)
                 await Task.Delay(30000);
         }
         finally
@@ -110,10 +111,18 @@ public sealed class Poller
     private async Task AuthenticateDevice()
     {
         RequestPacket request = new(1, 3, IDLocation, 4);
-        var response = await SendReceiveAsync(request);
+        ResponsePacket response;
+        try
+        {
+            response = await SendReceiveAsync(request);
+        }
+        catch (TimeoutException)
+        {
+            throw new SecurityException("Device authentication failed: could not get ID data from client");
+        }
         if (response.Data.Length != 4)
         {
-            throw new System.Security.SecurityException($"Device authentication failed: invalid response length");
+            throw new SecurityException($"Device authentication failed: invalid response length");
         }
         var series = response.Data[0];
         var id = response.Data[1];
@@ -124,14 +133,14 @@ public sealed class Poller
         var deviceID = (uint)series << 16 | id;
         if ((_deviceInfo = Authenticator.AuthenticateDevice(deviceID, secret)) is null)
         {
-            throw new System.Security.SecurityException($"Device authentication failed with credentials: " + deviceID + " " + secret);
+            throw new SecurityException($"Device authentication failed: wrong credentials: " + deviceID + " " + secret);
         }
         _deviceInfo = _deviceInfo with { PLCVersion = plcversion };
     }
 
     private async Task<MachineData> Poll()
     {
-        if (_deviceInfo is null) throw new System.Security.SecurityException($"Device authentication failed: device info is null");
+        if (_deviceInfo is null) throw new SecurityException($"Device authentication failed: device info is null");
         machineData ??= new(_deviceInfo.DeviceID);
         PollerProxy proxy = new(machineParameters!, _stream);
         for (int i = 0; i < machineParameters?.Parameters.Count; i++)
