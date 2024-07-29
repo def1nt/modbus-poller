@@ -38,7 +38,7 @@ public sealed class Poller
             {
                 var machineData = await Poll();
                 await _repository.SaveData(machineData);
-                await Task.Delay(5000);
+                await Task.Delay(3000);
             }
         }
         catch (Exception e)

@@ -10,6 +10,7 @@ using System.Net.Sockets;
 /// </summary>
 public sealed class PollerProxy
 {
+    private const int MaxAddressGap = 17;
     private readonly MachineParameters? machineParameters;
 
     private List<(int addr, byte code)> addresses = new();
@@ -46,7 +47,7 @@ public sealed class PollerProxy
 
         foreach (var (addr, code) in addresses.Where(a => a.code == f))
         {
-            if (addr - previous <= 9)
+            if (addr - previous <= MaxAddressGap)
             {
                 addressBundles[^1].Add(addr);
             }
@@ -126,7 +127,7 @@ public sealed class PollerProxy
 
         byte[] buffer = new byte[256];
         int bytesRead;
-        CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(3000));
+        CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(4000));
         try
         {
             await _stream.WriteAsync(request.Data, cts.Token);
