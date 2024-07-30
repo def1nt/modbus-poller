@@ -166,7 +166,7 @@ public sealed class Poller
                     Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(Data[1], Data[0])) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
                     Type t when t == typeof(bool) => (Data[0] & 1).ToString(CultureInfo.GetCultureInfo("en-US")),
                     Type t when t == typeof(string) => StringUtils.ASCIIBytesToUTFString(Data),
-                    Type t when t == typeof(byte) => Data.Reverse().Aggregate("", (s, c) => s + c.ToString()), // String would be LE without Reverse; ReadFunction was 1, Data is bit flags, filler implementation
+                    Type t when t == typeof(byte) => Data.Reverse().Aggregate(0L, (n, b) => n << 1 | b).ToString(),
                     _ => (Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US"))
                 }
             };
