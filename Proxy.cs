@@ -43,7 +43,7 @@ public sealed class PollerProxy
 
     private void Bundle(int f)
     {
-        int previous = 0;
+        int previous = -MaxAddressGap;
 
         foreach (var (addr, code) in addresses.Where(a => a.code == f))
         {
