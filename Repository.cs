@@ -236,6 +236,35 @@ public sealed class DatabaseRepository : IRepository
                 );
             }
 
+            for (int i = 0; i < 9; i++)
+            {
+                if (msInts[i] != 0)
+                {
+                    var msc = await DatabaseService.ExecuteScalar<long>($@"SELECT COUNT (*) FROM device_cleaners_total WHERE device_unique_id={data.DeviceID} AND wash_cycle={wash_cycle} AND register='ms{i + 1}'");
+                    if (msc == 0)
+                    {
+                        var res = await DatabaseService.ExecuteNonQuery("""
+                        INSERT INTO device_cleaners_total (device_unique_id, wash_cycle, register, ms_value, type_id, description, added_at) 
+                        (SELECT @DeviceID, @WashCycle, @Register, @Value, type_id, COALESCE (description, ''), @DateTime FROM device_cleaners_schema 
+                        WHERE device_unique_id=@DeviceID AND register=@Register LIMIT 1)
+                        """,
+                            ("DeviceID", (long)data.DeviceID),
+                            ("WashCycle", wash_cycle),
+                            ("Register", $"ms{i + 1}"),
+                            ("Value", msInts[i]),
+                            ("DateTime", DateTime.UtcNow));
+                    }
+                    else
+                    {
+                        var res = await DatabaseService.ExecuteNonQuery($"""UPDATE device_cleaners_total SET ms_value=@Value WHERE device_unique_id=@DeviceID AND wash_cycle=@WashCycle AND register=@Register""",
+                            ("Value", msInts[i]),
+                            ("DeviceID", (long)data.DeviceID),
+                            ("WashCycle", wash_cycle),
+                            ("Register", $"ms{i + 1}"));
+                    }
+                }
+            }
+
         }
         catch (Exception e)
         {
