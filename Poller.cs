@@ -175,6 +175,7 @@ public sealed class Poller
         }
         machineData.programName = machineData.Data.FirstOrDefault(p => p.Codename == "program_name")?.Value ?? "Unknown";
         machineData.stepName = machineData.Data.FirstOrDefault(p => p.Codename == "step_name")?.Value ?? "Unknown";
+        await DebugHijack(machineData.DeviceID);
         // await LogCounters();
         if (retries < maxRetries) retries += 1;
         await Task.CompletedTask;
@@ -192,6 +193,35 @@ public sealed class Poller
         // await DebugLog(0x04BC, 1, "шаг");
         // await DebugLog(0x20A, 1, "номер программы");
         // Console.WriteLine();
+    }
+
+    private async Task DebugHijack(ulong id)
+    {
+        var c = await DatabaseService.ExecuteScalar<int>($"SELECT COUNT (*) FROM monitordebug WHERE deviceid={(long)id}");
+        if (c > 0)
+        {
+            (ushort, string)[] addresses = Array.Empty<(ushort, string)>();
+            using var reader = DatabaseService.GetDataReader($"SELECT address, type FROM monitordebug WHERE deviceid={(long)id}");
+            while (reader.Read())
+            {
+                var a = (ushort)reader.GetInt32(0);
+                var t = reader.GetString(1);
+                addresses = addresses.Append((a, t)).ToArray();
+            }
+            foreach (var (addr, typestring) in addresses)
+            {
+                var (type, length) = StringUtils.DecodeTypeFromString(typestring);
+                RequestPacket request = new(1, 3, addr, (ushort)length);
+                var response = await SendReceiveAsync(request);
+                if (response.Data.Length == 0) continue;
+                var val = StringUtils.Stringify(response.Data, type);
+                await DatabaseService.ExecuteNonQuery("INSERT INTO monitordata (date, deviceid, address, value) VALUES (@date, @deviceid, @address, @value)",
+                ("date", DateTime.UtcNow),
+                ("deviceid", (long)id),
+                ("address", (int)addr),
+                ("value", val));
+            }
+        }
     }
 
     private async Task DebugLog(ushort address, ushort count, params string[] name) => await DebugLog(address, 3, count, name);
