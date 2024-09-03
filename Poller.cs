@@ -148,7 +148,7 @@ public sealed class Poller
             var parameter = machineParameters.Parameters[i];
             if (DateTime.Now - parameter.LastPoll < TimeSpan.FromSeconds(parameter.PollInterval))
                 continue;
-            var (type, length) = StringUtils.DecodeTypeFromString(parameter.Type);
+            var (type, _) = StringUtils.DecodeTypeFromString(parameter.Type);
 
             ushort[] Data = await proxy.GetData(machineParameters.Parameters[i]);
 
@@ -158,17 +158,7 @@ public sealed class Poller
                 Timestamp = DateTime.Now,
                 Name = parameter.Name,
                 Codename = parameter.Codename,
-                Value = type switch
-                { // Remember: word order is reversed in modbus
-                    Type t when t == typeof(ushort) => (Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(short) => (((short)Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(uint) => (RegisterUtils.CombineRegisters(Data[1], Data[0]) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(Data[1], Data[0])) * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(bool) => (Data[0] & 1).ToString(CultureInfo.GetCultureInfo("en-US")),
-                    Type t when t == typeof(string) => StringUtils.ASCIIBytesToUTFString(Data),
-                    Type t when t == typeof(byte) => Data.Reverse().Aggregate(0L, (n, b) => n << 1 | b).ToString(),
-                    _ => (Data[0] * parameter.Multiplier).ToString(CultureInfo.GetCultureInfo("en-US"))
-                }
+                Value = StringUtils.Stringify(Data, type, parameter.Multiplier)
             };
             var existingDataIndex = machineData.Data.FindIndex(x => x.Codename == registerData.Codename);
             if (existingDataIndex != -1)
