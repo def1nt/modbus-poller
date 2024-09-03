@@ -43,8 +43,25 @@ public static class StringUtils
             "int16" => (typeof(short), 1),
             "uint32" => (typeof(uint), 2),
             "int32" => (typeof(int), 2),
+            "float" => (typeof(float), 2),
             "bool" => (typeof(bool), 1),
             _ => (typeof(ushort), 1)
+        };
+    }
+
+    public static string Stringify(ushort[] data, Type type, double multiplier = 1.0)
+    {
+        return type switch
+        { // Remember: word order is reversed in modbus
+            Type t when t == typeof(ushort) => (data[0] * multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+            Type t when t == typeof(short) => (((short)data[0]) * multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+            Type t when t == typeof(uint) => (RegisterUtils.CombineRegisters(data[1], data[0]) * multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+            Type t when t == typeof(int) => (((int)RegisterUtils.CombineRegisters(data[1], data[0])) * multiplier).ToString(CultureInfo.GetCultureInfo("en-US")),
+            Type t when t == typeof(bool) => (data[0] & 1).ToString(CultureInfo.GetCultureInfo("en-US")),
+            Type t when t == typeof(string) => StringUtils.ASCIIBytesToUTFString(data),
+            Type t when t == typeof(byte) => data.Reverse().Aggregate(0L, (n, b) => n << 1 | b).ToString(),
+            Type t when t == typeof(float) => BitConverter.UInt32BitsToSingle(RegisterUtils.CombineRegisters(data[0], data[1])).ToString("####0.#####", CultureInfo.GetCultureInfo("en-US")),
+            _ => (data[0] * multiplier).ToString(CultureInfo.GetCultureInfo("en-US"))
         };
     }
 }
