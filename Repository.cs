@@ -83,12 +83,12 @@ public sealed class DatabaseRepository : IRepository
             if (errorCode != 0)
             {
                 var errCount = await DatabaseService.ExecuteScalar<long>($"""
-                SELECT count(*) FROM device_errs 
+                SELECT count(*) FROM device_errs
                 WHERE
-                device_unique_id={(long)data.DeviceID}  
+                device_unique_id={(long)data.DeviceID}
                 AND err_id={errorCode}
                 AND w_cycle={wash_cycle}
-                AND COALESCE(program_name,'')='{data.programName}' 
+                AND COALESCE(program_name,'')='{data.programName}'
                 AND COALESCE(program_step,'')='{data.stepName}'
                 """);
 
@@ -105,6 +105,48 @@ public sealed class DatabaseRepository : IRepository
                         ("program_name", data.programName),
                         ("program_step", data.stepName)
                     );
+                }
+            }
+
+            _ = long.TryParse(data.Data.FirstOrDefault(x => x.Codename == "error_flags")?.Value, out long errorFlags);
+            if (errorFlags != 0)
+            {
+                // get bit numbers from an integer into an array
+                var errorBits = new List<int>();
+                for (int i = 0; i < sizeof(long) * 8; i++)
+                {
+                    if ((errorFlags & (1L << i)) != 0)
+                    {
+                        errorBits.Add(i);
+                    }
+                }
+
+                // do as above for each bit
+                foreach (var bit in errorBits)
+                {
+                    var errCount = await DatabaseService.ExecuteScalar<long>($"""
+                    SELECT count(*) FROM device_m_errs
+                    WHERE
+                    device_unique_id={(long)data.DeviceID}
+                    AND err_code={bit}
+                    AND w_cycle={wash_cycle}
+                    AND COALESCE(program_name,'')='{data.programName}'
+                    AND COALESCE(program_step,'')='{data.stepName}'
+                    """);
+                    if (errCount == 0)
+                    {
+                        await DatabaseService.ExecuteNonQuery("""
+                        INSERT INTO device_m_errs (device_unique_id, err_code, w_cycle, added_at, program_name, program_step)
+                        VALUES (@DeviceID, @Error, @Cycle, @Timestamp, @program_name, @program_step)
+                        """,
+                            ("DeviceID", (long)data.DeviceID),
+                            ("Error", bit),
+                            ("Cycle", wash_cycle),
+                            ("Timestamp", DateTime.UtcNow),
+                            ("program_name", data.programName),
+                            ("program_step", data.stepName)
+                        );
+                    }
                 }
             }
 
@@ -244,8 +286,8 @@ public sealed class DatabaseRepository : IRepository
                     if (msc == 0)
                     {
                         var res = await DatabaseService.ExecuteNonQuery("""
-                        INSERT INTO device_cleaners_total (device_unique_id, wash_cycle, register, ms_value, type_id, description, added_at) 
-                        (SELECT @DeviceID, @WashCycle, @Register, @Value, type_id, COALESCE (description, ''), @DateTime FROM device_cleaners_schema 
+                        INSERT INTO device_cleaners_total (device_unique_id, wash_cycle, register, ms_value, type_id, description, added_at)
+                        (SELECT @DeviceID, @WashCycle, @Register, @Value, type_id, COALESCE (description, ''), @DateTime FROM device_cleaners_schema
                         WHERE device_unique_id=@DeviceID AND register=@Register LIMIT 1)
                         """,
                             ("DeviceID", (long)data.DeviceID),
